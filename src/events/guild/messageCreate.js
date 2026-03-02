@@ -174,26 +174,5 @@ module.exports = {
         } catch (e) {
             console.error('[PREFIX] Error:', e);
         }
-
-        // --- Mention Response ---
-        let isReplyToBot = false;
-        if (message.reference?.messageId) {
-            try {
-                const refMsg = await message.channel.messages.fetch(message.reference.messageId).catch(() => null);
-                isReplyToBot = Boolean(refMsg && refMsg.author?.id === client.user.id);
-            } catch (_) {
-                isReplyToBot = false;
-            }
-        }
-
-        const botMentioned = Boolean(message.mentions?.users?.has(client.user.id)) || isReplyToBot;
-
-        if (botMentioned && !message.author.bot) {
-            const cleanContent = String(message.content || '').replace(/<@!?\d+>/g, '').trim().toLowerCase();
-
-            if (cleanContent.includes('i love you') || cleanContent.includes('love you') || cleanContent.includes('بحبك')) {
-                return await message.reply('بحبك أكتر يا قلبي ❤️');
-            }
-        }
     }
 };
