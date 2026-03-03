@@ -6,7 +6,7 @@ async function loadEvents(client) {
     for (const folder of folders) {
         const files = fs.readdirSync(path.join(__dirname, `../events/${folder}`)).filter((file) => file.endsWith('.js'));
         for (const file of files) {
-            if (folder === 'guild' && ['guildMemberAdd.js', 'guildMemberRemove.js', 'guildMemberUpdate.js'].includes(file)) continue;
+            if (folder === 'guild' && ['guildMemberAdd.js', 'guildMemberRemove.js', 'guildMemberUpdate.js', 'voiceStateUpdate.js'].includes(file)) continue;
             const event = require(`../events/${folder}/${file}`);
             if (event.rest) {
                 if (event.once)
