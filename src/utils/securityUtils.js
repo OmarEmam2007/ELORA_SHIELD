@@ -1,11 +1,13 @@
 const linkRegex = /(https?:\/\/[^\s]+|discord\.gg\/[^\s]+)/gi;
 const inviteRegex = /(discord\.gg|discord\.com\/invite)\/.+/i;
+const allowedGifRegex = /(tenor\.com|giphy\.com|\.gif(\b|\?|#))/i;
 
 // Simple in-memory tracker for anti-nuke (Rate Limits)
 // Map<GuildID, Map<UserID, { action: count, lastTime: timestamp }>>
 const antiNukeMap = new Map();
 
 function checkLink(content) {
+    if (allowedGifRegex.test(content)) return null;
     if (inviteRegex.test(content)) return 'INVITE';
     if (linkRegex.test(content)) return 'LINK';
     return null;
