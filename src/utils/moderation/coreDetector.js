@@ -201,6 +201,126 @@ function escapeRegex(s) {
     return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function splitIntoWords(text) {
+    const raw = String(text || '');
+    if (!raw.trim()) return [];
+    // split on whitespace; keep punctuation attached to word for per-word cleanup
+    return raw.split(/\s+/).filter(Boolean);
+}
+
+function stripInternalSymbols(word) {
+    // remove symbols INSIDE word so "بيدوف*يلي" => "بيدوفيلي"
+    // keep only Arabic letters, Latin letters, and digits
+    return String(word || '').replace(/[^a-zA-Z0-9\u0621-\u064Aء]/g, '');
+}
+
+function normalizeArabicWord(word) {
+    let w = String(word || '');
+    if (!w) return '';
+    w = w
+        .replace(/[أإآا]/g, 'ا')
+        .replace(/[ى]/g, 'ي')
+        .replace(/[ة]/g, 'ه')
+        .replace(/ؤ/g, 'و')
+        .replace(/ئ/g, 'ي');
+    w = w
+        .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '')
+        .replace(/ـ/g, '');
+    // collapse repeats
+    w = w.replace(/([\u0621-\u064Aء])\1{1,}/g, '$1');
+    return w;
+}
+
+function normalizeEnglishWord(word) {
+    let w = String(word || '').toLowerCase();
+    if (!w) return '';
+    // map common look-alikes
+    w = w
+        .replace(/0/g, 'o')
+        .replace(/1/g, 'i')
+        .replace(/3/g, 'e')
+        .replace(/4/g, 'a')
+        .replace(/5/g, 's')
+        .replace(/7/g, 't')
+        .replace(/8/g, 'b');
+    // collapse repeats (fuuuuuck -> fuck)
+    w = w.replace(/([a-z])\1{1,}/g, '$1');
+    return w;
+}
+
+function normalizeWordDeep(word) {
+    // IMPORTANT: per-word normalization only, to avoid cross-word merges
+    const stripped = stripInternalSymbols(word);
+    if (!stripped) return '';
+    const hasArabic = /[\u0600-\u06FF]/.test(stripped);
+    const hasLatin = /[a-zA-Z]/.test(stripped);
+
+    let out = stripped;
+    if (hasArabic) out = normalizeArabicWord(out);
+    if (hasLatin) out = normalizeEnglishWord(out);
+    // drop anything that isn't a letter/digit after normalization
+    out = out.replace(/[^a-z0-9\u0621-\u064Aء]/gi, '');
+    return out;
+}
+
+function buildPerWordFuzzyRegex(term) {
+    const t = normalizeWordDeep(term);
+    if (!t) return null;
+
+    const isAsciiAlpha = /^[a-z]+$/.test(t);
+    const isArabic = /[\u0600-\u06FF]/.test(t);
+
+    // build char-by-char pattern that tolerates repeats: f+u+c+k+
+    let body = t.split('').map(ch => `${escapeRegex(ch)}+`).join('');
+
+    // Arabic: tolerate optional Alef after initial B (بايدوفيلي vs بيدوفيلي)
+    if (isArabic) {
+        body = body.replace(/^ب\+ي\+/, 'ب\\+ا\\*ي\\+');
+    }
+
+    // standalone word only (no substring inside other words)
+    if (isAsciiAlpha) {
+        return new RegExp(`^${body}$`, 'i');
+    }
+    return new RegExp(`^${body}$`);
+}
+
+function detectProfanityPerWord(content, { extraTerms = [], whitelist = [] } = {}) {
+    const wordsRaw = splitIntoWords(content);
+    if (!wordsRaw.length) return { isViolation: false, matches: [] };
+
+    const list = [...new Set([...(Array.isArray(profanityList) ? profanityList : []), ...(Array.isArray(extraTerms) ? extraTerms : [])])];
+
+    const wl = new Set(
+        (Array.isArray(whitelist) ? whitelist : [])
+            .map(t => normalizeWordDeep(t))
+            .filter(Boolean)
+    );
+
+    const matches = [];
+    for (const rawWord of wordsRaw) {
+        const wNorm = normalizeWordDeep(rawWord);
+        if (!wNorm) continue;
+        if (GLOBAL_WHITELIST.has(wNorm) || wl.has(wNorm)) continue;
+
+        for (const term of list) {
+            if (!term || typeof term !== 'string') continue;
+            const tNorm = normalizeWordDeep(term);
+            if (!tNorm) continue;
+            if (GLOBAL_WHITELIST.has(tNorm) || wl.has(tNorm)) continue;
+
+            const rx = buildPerWordFuzzyRegex(term);
+            if (!rx) continue;
+            if (rx.test(wNorm)) {
+                matches.push(term);
+            }
+        }
+    }
+
+    if (!matches.length) return { isViolation: false, matches: [] };
+    return { isViolation: true, matches: [...new Set(matches)] };
+}
+
 function tokenize(text) {
     const clean = normalizeText(text);
     if (!clean) return [];
@@ -237,34 +357,8 @@ function buildWordRegex(term) {
 }
 
 function detectProfanitySmart(content, { extraTerms = [], whitelist = [] } = {}) {
-    const raw = String(content || '');
-    const normalized = normalizeText(raw);
-    const normalizedDigits = normalizeTextKeepDigits(raw);
-    if (!normalized && !normalizedDigits) return { isViolation: false, matches: [] };
-
-    const list = [...new Set([...(Array.isArray(profanityList) ? profanityList : []), ...(Array.isArray(extraTerms) ? extraTerms : [])])];
-    const wl = new Set((Array.isArray(whitelist) ? whitelist : []).map(t => normalizeText(t)).filter(Boolean));
-
-    const matches = [];
-    for (const term of list) {
-        if (!term || typeof term !== 'string') continue;
-        const tNorm = normalizeText(term);
-        if (tNorm && (wl.has(tNorm) || GLOBAL_WHITELIST.has(tNorm))) continue;
-
-        const rx = buildWordRegex(term);
-        if (!rx) continue;
-
-        const hit = rx.exec(normalized) || rx.exec(normalizedDigits);
-        if (hit) {
-            const matchedString = (hit[1] || hit[0]).trim();
-            const matchedNorm = normalizeText(matchedString);
-            if (GLOBAL_WHITELIST.has(matchedNorm)) continue;
-            matches.push(term);
-        }
-    }
-
-    if (!matches.length) return { isViolation: false, matches: [] };
-    return { isViolation: true, matches: [...new Set(matches)] };
+    // Per-word detection to avoid cross-word merges and reduce false positives
+    return detectProfanityPerWord(content, { extraTerms, whitelist });
 }
 
 function levenshteinDistance(s1, s2) {

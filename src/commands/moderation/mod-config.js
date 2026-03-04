@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
 const ModSettings = require('../../models/ModSettings');
 const User = require('../../models/User');
+const profanityList = require('../../utils/profanityList');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -80,6 +81,10 @@ module.exports = {
         .addSubcommand(sub =>
             sub.setName('blacklist-list')
                 .setDescription('List all custom blocked terms (anti-swearing) for this server.')
+        )
+        .addSubcommand(sub =>
+            sub.setName('blacklist-list-all')
+                .setDescription('List all blocked terms (built-in + custom) for this server.')
         ),
     async execute(interaction, client) {
         const sub = interaction.options.getSubcommand();
@@ -219,6 +224,34 @@ module.exports = {
             const shown = list.slice(0, 50).map((t, i) => `${i + 1}. ${t}`).join('\n');
             const extra = list.length > 50 ? `\n\n…and ${list.length - 50} more.` : '';
             return interaction.reply({ content: `Custom anti-swear blacklist (${list.length}):\n${shown}${extra}`, ephemeral: true });
+        }
+
+        if (sub === 'blacklist-list-all') {
+            const settings = await ModSettings.findOne({ guildId: interaction.guildId }).lean().catch(() => null);
+            const custom = Array.isArray(settings?.customBlacklist) ? settings.customBlacklist : [];
+            const builtIn = Array.isArray(profanityList) ? profanityList : [];
+
+            const builtInShown = builtIn.slice(0, 50).map((t, i) => `${i + 1}. ${t}`).join('\n');
+            const builtInExtra = builtIn.length > 50 ? `\n\n…and ${builtIn.length - 50} more.` : '';
+
+            const customShown = custom.slice(0, 50).map((t, i) => `${i + 1}. ${t}`).join('\n');
+            const customExtra = custom.length > 50 ? `\n\n…and ${custom.length - 50} more.` : '';
+
+            const builtInBlock = builtIn.length
+                ? `Built-in blacklist (${builtIn.length}):\n${builtInShown}${builtInExtra}`
+                : 'Built-in blacklist (0):\n(no built-in terms found)';
+
+            const customBlock = custom.length
+                ? `Custom blacklist (${custom.length}):\n${customShown}${customExtra}`
+                : 'Custom blacklist (0):\n(no custom terms set for this server)';
+
+            // Keep within Discord limits comfortably
+            let content = `${builtInBlock}\n\n${customBlock}`;
+            if (content.length > 1800) {
+                content = content.slice(0, 1800) + '\n\n…(truncated)';
+            }
+
+            return interaction.reply({ content, ephemeral: true });
         }
     },
 };
