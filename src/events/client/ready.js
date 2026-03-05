@@ -4,6 +4,39 @@ module.exports = {
     async execute(client) {
         console.log(`🤖 Logged in as ${client.user.tag}`);
 
+        // --- 🔊 Voice Channel 24/7 Join (best-effort) ---
+        try {
+            const { joinVoiceChannel, getVoiceConnection } = require('@discordjs/voice');
+            const { ChannelType } = require('discord.js');
+            const targetChannelId = '1479234725288869993';
+
+            const targetChannel = await client.channels.fetch(targetChannelId).catch(() => null);
+            const guild = targetChannel?.guild;
+
+            if (!targetChannel || !guild) {
+                console.warn('[VOICE] Target channel not found / not in cache:', targetChannelId);
+            } else if (targetChannel.type !== ChannelType.GuildVoice) {
+                console.warn('[VOICE] Target channel is not a voice channel:', targetChannelId);
+            } else {
+                const existing = getVoiceConnection(guild.id);
+                const alreadyInChannel = Boolean(existing && existing.joinConfig?.channelId === targetChannelId);
+
+                if (!alreadyInChannel) {
+                    joinVoiceChannel({
+                        channelId: targetChannelId,
+                        guildId: guild.id,
+                        adapterCreator: guild.voiceAdapterCreator,
+                        selfDeaf: true,
+                    });
+                    console.log('[VOICE] Joined voice channel:', targetChannelId);
+                } else {
+                    console.log('[VOICE] Already connected to target voice channel:', targetChannelId);
+                }
+            }
+        } catch (e) {
+            console.error('[VOICE] Auto-join failed:', e?.message || e);
+        }
+
         const ownerId = client?.config?.ownerId || process.env.OWNER_ID;
         if (!ownerId) {
             console.warn('⚠️ WARNING: Owner ID is not set in config.json! /panic and /blacklist will NOT work.');
