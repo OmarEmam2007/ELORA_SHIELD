@@ -6,7 +6,16 @@ module.exports = {
 
         // --- 🔊 Voice Channel 24/7 Join (best-effort) ---
         try {
-            const { joinVoiceChannel, getVoiceConnection } = require('@discordjs/voice');
+            let voice = null;
+            try {
+                voice = require('@discordjs/voice');
+            } catch (e) {
+                console.warn('[VOICE] Skipping auto-join: @discordjs/voice is not installed. Install it to enable 24/7 voice:', e?.message || e);
+                voice = null;
+            }
+            if (!voice) return;
+
+            const { joinVoiceChannel, getVoiceConnection } = voice;
             const { ChannelType } = require('discord.js');
             const targetChannelId = '1479234725288869993';
 
