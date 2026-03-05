@@ -209,8 +209,9 @@ function splitIntoWords(text) {
 }
 
 function stripInternalSymbols(word) {
-    // remove symbols INSIDE word so "بيدوف*يلي" => "بيدوفيلي"
-    // keep only Arabic letters, Latin letters, and digits
+    // Deep stripping: remove ALL non-alphanumeric chars from inside the word ONLY.
+    // This catches bypass like: b.e.d.o -> bedo, f.u.c.k -> fuck, بـيـدوفـيـلـي -> بيدوفيلي
+    // NOTE: word boundaries are handled by the outer loop (split by whitespace).
     return String(word || '').replace(/[^a-zA-Z0-9\u0621-\u064Aء]/g, '');
 }
 
@@ -263,6 +264,51 @@ function normalizeWordDeep(word) {
     return out;
 }
 
+function hasNonAlnum(word) {
+    return /[^a-zA-Z0-9\u0621-\u064Aء]/.test(String(word || ''));
+}
+
+function buildWildcardGapPatternFromCleanTerm(cleanTerm) {
+    // builds a pattern that allows ANY number of non-alphanumeric separators between letters
+    // e.g. "porn" -> p[^a-z0-9\u0621-\u064Aء]*o[^...]*r[^...]*n
+    const chars = String(cleanTerm || '').split('').map(escapeRegex);
+    if (!chars.length) return null;
+    const gap = '[^a-z0-9\u0621-\u064Aء]*';
+    return chars.join(gap);
+}
+
+function buildMissingOneLetterPatternFromCleanTerm(cleanTerm) {
+    // Allow exactly ONE missing letter (replaced by 0+ non-alphanumerics) for long terms.
+    // Example: fuck (len 4) is handled by explicit term variants in the list.
+    // Example: pedophile (len>=5): allow one skipped letter to catch patterns like ب.دوفيلي.
+    const t = String(cleanTerm || '');
+    if (t.length < 5) return null;
+    const gap = '[^a-z0-9\u0621-\u064Aء]*';
+    const out = [];
+    for (let skip = 1; skip < t.length - 1; skip++) {
+        const left = t.slice(0, skip).split('').map(escapeRegex).join(gap);
+        const right = t.slice(skip + 1).split('').map(escapeRegex).join(gap);
+        out.push(`${left}${gap}${right}`);
+    }
+    if (!out.length) return null;
+    return `(?:${out.join('|')})`;
+}
+
+function buildSkeletonRegexFromCleanTerm(cleanTerm) {
+    // Safety-only for long terms: starts with first letter, ends with last letter,
+    // and total alphanumeric length is either same or -1.
+    const t = String(cleanTerm || '');
+    if (t.length < 5) return null;
+    const first = escapeRegex(t[0]);
+    const last = escapeRegex(t[t.length - 1]);
+    const len = t.length;
+    // allow 3..(len-2) internal chars (so total is len or len-1)
+    const innerSame = `{${Math.max(0, len - 2)}}`;
+    const innerMinusOne = `{${Math.max(0, len - 3)}}`;
+    const body = `(?:${first}[a-z0-9\u0621-\u064Aء]${innerMinusOne}${last}|${first}[a-z0-9\u0621-\u064Aء]${innerSame}${last})`;
+    return new RegExp(`^${body}$`, 'i');
+}
+
 function buildPerWordFuzzyRegex(term) {
     const t = normalizeWordDeep(term);
     if (!t) return null;
@@ -271,6 +317,7 @@ function buildPerWordFuzzyRegex(term) {
     const isArabic = /[\u0600-\u06FF]/.test(t);
 
     // build char-by-char pattern that tolerates repeats: f+u+c+k+
+    // NOTE: anchoring is ALWAYS applied by the caller (^...$)
     let body = t.split('').map(ch => `${escapeRegex(ch)}+`).join('');
 
     // Arabic: tolerate optional Alef after initial B (بايدوفيلي vs بيدوفيلي)
@@ -279,6 +326,7 @@ function buildPerWordFuzzyRegex(term) {
     }
 
     // standalone word only (no substring inside other words)
+    // Always anchored ^...$ to enforce isolated whole-word matching.
     if (isAsciiAlpha) {
         return new RegExp(`^${body}$`, 'i');
     }
@@ -289,6 +337,7 @@ function detectProfanityPerWord(content, { extraTerms = [], whitelist = [] } = {
     const wordsRaw = splitIntoWords(content);
     if (!wordsRaw.length) return { isViolation: false, matches: [] };
 
+    // Build blacklist once; de-dup at the term level.
     const list = [...new Set([...(Array.isArray(profanityList) ? profanityList : []), ...(Array.isArray(extraTerms) ? extraTerms : [])])];
 
     const wl = new Set(
@@ -298,21 +347,72 @@ function detectProfanityPerWord(content, { extraTerms = [], whitelist = [] } = {
     );
 
     const matches = [];
+
+    // STRICT LOOP RULE:
+    // for each isolated word: clean -> check whole word against blacklist -> if no match, move to next word
     for (const rawWord of wordsRaw) {
-        const wNorm = normalizeWordDeep(rawWord);
-        if (!wNorm) continue;
-        if (GLOBAL_WHITELIST.has(wNorm) || wl.has(wNorm)) continue;
+        const wordHadSymbols = hasNonAlnum(rawWord);
+        const ultraCleanedWord = stripInternalSymbols(rawWord);
+        const cleanedWord = normalizeWordDeep(rawWord);
+        if (!cleanedWord) continue;
+        if (GLOBAL_WHITELIST.has(cleanedWord) || wl.has(cleanedWord)) continue;
+
+        const ultraNorm = ultraCleanedWord ? normalizeWordDeep(ultraCleanedWord) : '';
 
         for (const term of list) {
             if (!term || typeof term !== 'string') continue;
-            const tNorm = normalizeWordDeep(term);
-            if (!tNorm) continue;
-            if (GLOBAL_WHITELIST.has(tNorm) || wl.has(tNorm)) continue;
+            const cleanedTerm = normalizeWordDeep(term);
+            if (!cleanedTerm) continue;
+            if (GLOBAL_WHITELIST.has(cleanedTerm) || wl.has(cleanedTerm)) continue;
 
+            // NO PARTIAL MATCHES FOR SHORT BANNED WORDS (<= 4)
+            // must be identical to the cleaned word.
+            if (cleanedTerm.length <= 4) {
+                if (cleanedWord === cleanedTerm || (ultraNorm && ultraNorm === cleanedTerm)) {
+                    matches.push(term);
+                    break;
+                }
+                continue;
+            }
+
+            // ISOLATED REGEX RULE: always ^...$ (whole cleaned word only)
             const rx = buildPerWordFuzzyRegex(term);
             if (!rx) continue;
-            if (rx.test(wNorm)) {
+            if (rx.test(cleanedWord) || (ultraNorm && rx.test(ultraNorm))) {
                 matches.push(term);
+                break;
+            }
+
+            // If the word used symbols as bypass, try gap/wildcard and skeleton checks (LONG TERMS ONLY)
+            if (wordHadSymbols) {
+                // 1) allow arbitrary symbol gaps between letters (p.o.r.n)
+                const gapPattern = buildWildcardGapPatternFromCleanTerm(cleanedTerm);
+                if (gapPattern) {
+                    const isAscii = /^[a-z]+$/.test(cleanedTerm);
+                    const gapRx = new RegExp(`^${gapPattern}$`, isAscii ? 'i' : undefined);
+                    if (gapRx.test(String(rawWord || ''))) {
+                        matches.push(term);
+                        break;
+                    }
+                }
+
+                // 2) allow exactly one missing letter replaced by symbols (f*ck style, for long terms)
+                const missingOne = buildMissingOneLetterPatternFromCleanTerm(cleanedTerm);
+                if (missingOne) {
+                    const isAscii = /^[a-z]+$/.test(cleanedTerm);
+                    const missRx = new RegExp(`^${missingOne}$`, isAscii ? 'i' : undefined);
+                    if (missRx.test(String(rawWord || ''))) {
+                        matches.push(term);
+                        break;
+                    }
+                }
+
+                // 3) skeleton safety check (long terms only)
+                const skRx = buildSkeletonRegexFromCleanTerm(cleanedTerm);
+                if (skRx && (skRx.test(cleanedWord) || (ultraNorm && skRx.test(ultraNorm)))) {
+                    matches.push(term);
+                    break;
+                }
             }
         }
     }
