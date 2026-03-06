@@ -12,6 +12,8 @@ module.exports = {
     async execute(message, client) {
         if (message.author.bot || !message.guild) return;
 
+        const ANTISWEAR_DEBUG = process.env.ANTISWEAR_DEBUG === '1';
+
         // --- Language filter: block Arabic in specific channel ---
         try {
             if (message.channelId === '1462025794481164461') {
@@ -93,11 +95,33 @@ module.exports = {
                 (message.member?.roles?.cache && whitelistRoles.some(r => message.member.roles.cache.has(r)))
             );
 
+            if (ANTISWEAR_DEBUG) {
+                console.log('[ANTISWEAR] gates=', {
+                    guildId: message.guild.id,
+                    channelId: message.channelId,
+                    userId: message.author.id,
+                    antiSwearEnabled,
+                    isServerOwner,
+                    isAdministrator,
+                    isWhitelisted,
+                });
+                console.log('[ANTISWEAR] textForModeration=', { text: textForModeration || message.content });
+            }
+
             if (antiSwearEnabled && !isServerOwner && !isAdministrator && !isWhitelisted) {
                 const detection = detectProfanitySimple(textForModeration || message.content, {
                     extraTerms: Array.isArray(modSettings?.customBlacklist) ? modSettings.customBlacklist : [],
                     whitelist: Array.isArray(modSettings?.antiSwearWhitelist) ? modSettings.antiSwearWhitelist : []
                 });
+
+                if (ANTISWEAR_DEBUG) {
+                    console.log('[ANTISWEAR] detection=', {
+                        isViolation: detection?.isViolation,
+                        source: detection?.source,
+                        matches: detection?.matches,
+                        hits: detection?.hits,
+                    });
+                }
 
                 if (detection?.isViolation) {
                     await message.delete().catch(() => {});

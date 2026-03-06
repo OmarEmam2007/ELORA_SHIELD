@@ -73,6 +73,7 @@ module.exports = {
                     isAdministrator,
                     shouldApplyAntiSwear,
                 });
+                console.log('[ANTISWEAR][EDIT] textForModeration=', { text: textForModeration || newContent });
             }
 
             if (shouldApplyAntiSwear) {

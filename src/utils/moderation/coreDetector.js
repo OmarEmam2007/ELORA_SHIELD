@@ -495,19 +495,27 @@ function detectProfanityPerWord(content, { extraTerms = [], whitelist = [] } = {
         while (j < wordsRaw.length) {
             const tok = wordsRaw[j];
             if (!isSingleCharToken(tok) && !isShortArabicToken(tok)) break;
-            buf.push(stripInternalSymbols(wordsRaw[j]));
+
+            const stripped = stripInternalSymbols(wordsRaw[j]);
+            const normTok = normalizeWordDeep(stripped);
+            const collapsedTok = normTok ? collapseRepeatsAggressive(normTok) : '';
+            // Keep original stripped fragment for English single-char joining, but for Arabic
+            // allow collapsing elongated repeats at the token level (e.g. "ااا" -> "ا").
+            buf.push(collapsedTok || stripped);
             j++;
         }
 
         if (buf.length) {
             const candidateRaw = buf.join('');
             const candidateClean = normalizeWordDeep(candidateRaw);
+            const candidateCollapsed = candidateClean ? collapseRepeatsAggressive(candidateClean) : '';
 
-            const isArabic = /[\u0600-\u06FF]/.test(candidateClean);
+            const isArabic = /[\u0600-\u06FF]/.test(candidateCollapsed || candidateClean);
             if (isArabic) {
                 // Arabic: require at least 3 letters to reduce false positives
-                if (candidateClean.length >= 3) {
-                    const hit = detectViolationForSingleCleanWord(candidateClean, candidateClean, buf.join(' '), list, wl);
+                const candidate = candidateCollapsed || candidateClean;
+                if (candidate && candidate.length >= 3) {
+                    const hit = detectViolationForSingleCleanWord(candidate, candidate, buf.join(' '), list, wl);
                     if (hit) {
                         matches.push(hit.term);
                         hits.push({ ...hit, rawWord: `spaced:${hit.rawWord}` });
