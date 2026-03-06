@@ -6,6 +6,15 @@ try {
     GoogleGenerativeAI = null;
 }
 
+function isShortArabicToken(tok) {
+    const t = String(tok || '').trim();
+    if (!t) return false;
+    if (!/[\u0600-\u06FF]/.test(t)) return false;
+    // after stripping symbols, allow very short pieces (e.g. "اح" or "ا")
+    const stripped = stripInternalSymbols(t);
+    return Boolean(stripped) && stripped.length <= 2;
+}
+
 // Initialize Gemini for context checks if available
 const genAI = (process.env.GEMINI_API_KEY && GoogleGenerativeAI) ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
 const geminiModelName = process.env.GEMINI_MODEL || 'gemini-2.0-flash-exp';
@@ -474,14 +483,18 @@ function detectProfanityPerWord(content, { extraTerms = [], whitelist = [] } = {
     }
 
     // spaced-letter bypass: catch sequences like "ا ح ا" or "f u c k"
-    // Safety rule: only join runs of single-character tokens.
-    // - Arabic: allow len >= 3
-    // - English: allow len >= 4
+    // Safety rule:
+    // - English: only join runs of single-character tokens.
+    // - Arabic: also join very short Arabic fragments (<= 2 chars) to catch "اح ا".
     for (let i = 0; i < wordsRaw.length; i++) {
-        if (!isSingleCharToken(wordsRaw[i])) continue;
+        const canStart = isSingleCharToken(wordsRaw[i]) || isShortArabicToken(wordsRaw[i]);
+        if (!canStart) continue;
         let j = i;
         const buf = [];
-        while (j < wordsRaw.length && isSingleCharToken(wordsRaw[j])) {
+
+        while (j < wordsRaw.length) {
+            const tok = wordsRaw[j];
+            if (!isSingleCharToken(tok) && !isShortArabicToken(tok)) break;
             buf.push(stripInternalSymbols(wordsRaw[j]));
             j++;
         }
@@ -491,13 +504,24 @@ function detectProfanityPerWord(content, { extraTerms = [], whitelist = [] } = {
             const candidateClean = normalizeWordDeep(candidateRaw);
 
             const isArabic = /[\u0600-\u06FF]/.test(candidateClean);
-            const minLen = isArabic ? 3 : 4;
-
-            if (candidateClean && candidateClean.length >= minLen) {
-                const hit = detectViolationForSingleCleanWord(candidateClean, candidateClean, buf.join(' '), list, wl);
-                if (hit) {
-                    matches.push(hit.term);
-                    hits.push({ ...hit, rawWord: `spaced:${hit.rawWord}` });
+            if (isArabic) {
+                // Arabic: require at least 3 letters to reduce false positives
+                if (candidateClean.length >= 3) {
+                    const hit = detectViolationForSingleCleanWord(candidateClean, candidateClean, buf.join(' '), list, wl);
+                    if (hit) {
+                        matches.push(hit.term);
+                        hits.push({ ...hit, rawWord: `spaced:${hit.rawWord}` });
+                    }
+                }
+            } else {
+                // English: require 4+ letters and ONLY single-char tokens (avoid joining arbitrary words)
+                const onlySingleChars = buf.every(x => String(x || '').length === 1);
+                if (onlySingleChars && candidateClean.length >= 4) {
+                    const hit = detectViolationForSingleCleanWord(candidateClean, candidateClean, buf.join(' '), list, wl);
+                    if (hit) {
+                        matches.push(hit.term);
+                        hits.push({ ...hit, rawWord: `spaced:${hit.rawWord}` });
+                    }
                 }
             }
         }
