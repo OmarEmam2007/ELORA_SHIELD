@@ -544,6 +544,39 @@ function buildWordRegex(term) {
     return new RegExp(body, 'i');
 }
 
+function detectProfanityEnglishBoundary(content, { extraTerms = [], whitelist = [] } = {}) {
+    const raw = String(content || '');
+    if (!raw.trim()) return { isViolation: false, matches: [] };
+
+    const list = [...new Set([...(Array.isArray(profanityList) ? profanityList : []), ...(Array.isArray(extraTerms) ? extraTerms : [])])];
+    const wl = new Set((Array.isArray(whitelist) ? whitelist : []).map(t => String(t || '').toLowerCase()).filter(Boolean));
+
+    for (const term of list) {
+        if (!term || typeof term !== 'string') continue;
+        const t = String(term).toLowerCase().trim();
+        if (!t) continue;
+        if (wl.has(t)) continue;
+        // English-only terms: use \b boundaries to prevent substring matches
+        if (!/^[a-z0-9\s\W_]+$/i.test(t) || /[\u0600-\u06FF]/.test(t)) continue;
+
+        const escaped = escapeRegex(t);
+        const rx = new RegExp(`\\b${escaped}\\b`, 'i');
+        if (rx.test(raw)) return { isViolation: true, matches: [term] };
+    }
+
+    return { isViolation: false, matches: [] };
+}
+
+function detectProfanitySimple(content, { extraTerms = [], whitelist = [] } = {}) {
+    // English: \b boundary regex
+    const en = detectProfanityEnglishBoundary(content, { extraTerms, whitelist });
+    if (en.isViolation) return { ...en, source: 'english_boundary' };
+
+    // Arabic + bypass handling: existing strict per-token detector
+    const ar = detectProfanityPerWord(content, { extraTerms, whitelist });
+    return { ...ar, source: 'token' };
+}
+
 function detectProfanitySmart(content, { extraTerms = [], whitelist = [] } = {}) {
     // Per-word detection to avoid cross-word merges and reduce false positives
     return detectProfanityPerWord(content, { extraTerms, whitelist });
@@ -647,4 +680,4 @@ async function analyzeMessage(messageContent) {
     return { isViolation: true, matches: matches, confidence: 95, severity: severityScore > 50 ? 'Extreme' : 'Severe', reason: 'Direct word match' };
 }
 
-module.exports = { analyzeMessage, normalizeText, levenshteinDistance, detectProfanitySmart, detectProfanityHybrid, detectProfanityAI, tokenize };
+module.exports = { analyzeMessage, normalizeText, levenshteinDistance, detectProfanitySmart, detectProfanityHybrid, detectProfanityAI, tokenize, detectProfanitySimple, detectProfanityEnglishBoundary };

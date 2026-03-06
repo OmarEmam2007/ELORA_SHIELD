@@ -1,9 +1,7 @@
 const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const { getGuildLogChannel } = require('../../utils/getGuildLogChannel');
 const ModSettings = require('../../models/ModSettings');
-const User = require('../../models/User');
-const THEME = require('../../utils/theme');
-const { detectProfanitySmart, detectProfanityAI } = require('../../utils/moderation/coreDetector');
+const { detectProfanitySimple } = require('../../utils/moderation/coreDetector');
 
 module.exports = {
     name: 'messageUpdate',
@@ -78,8 +76,7 @@ module.exports = {
 
             if (shouldApplyAntiSwear) {
                 if (!textForModeration && !newContent) return;
-                const detector = typeof detectProfanityAI === 'function' ? detectProfanityAI : async (c, o) => detectProfanitySmart(c, o);
-                const detection = await detector(textForModeration || newContent, {
+                const detection = detectProfanitySimple(textForModeration || newContent, {
                     extraTerms: Array.isArray(modSettings?.customBlacklist) ? modSettings.customBlacklist : [],
                     whitelist: Array.isArray(modSettings?.antiSwearWhitelist) ? modSettings.antiSwearWhitelist : []
                 });
@@ -87,55 +84,11 @@ module.exports = {
                 if (ANTISWEAR_DEBUG) console.log('[ANTISWEAR][EDIT] detection=', { isViolation: detection?.isViolation, source: detection?.source, ai: detection?.ai ? { ok: detection.ai.ok, confidence: detection.ai.confidence, reason: detection.ai.reason } : undefined });
 
                 if (detection?.isViolation) {
-                    const threshold = Math.max(2, Math.min(20, Number(modSettings?.antiSwearThreshold || 5)));
-
                     await newMessage.delete().catch((e) => {
                         if (ANTISWEAR_DEBUG) console.log('[ANTISWEAR][EDIT] delete failed:', e?.message || e);
                     });
 
-                    const key = `${guild.id}:${oldMessage.author.id}`;
-                    let userProfile = await User.findOne({ userId: oldMessage.author.id, guildId: guild.id }).catch(() => null);
-                    if (!userProfile) userProfile = new User({ userId: oldMessage.author.id, guildId: guild.id });
-
-                    const prevCount = Number(userProfile.antiSwearWarningsCount || 0);
-                    const nextCount = Math.min(threshold, prevCount + 1);
-                    userProfile.antiSwearWarningsCount = nextCount;
-                    userProfile.antiSwearLastAt = new Date();
-                    await userProfile.save().catch(() => { });
-
-                    const warnText =
-                        `Your edited message was removed because it contained prohibited language.\n` +
-                        `Warning: ${nextCount}/${threshold}. If you reach ${threshold} warnings, you will be timed out for 1 hour.`;
-                    await oldMessage.author.send(warnText).catch(() => { });
-
-                    const logChannel = await getGuildLogChannel(guild, client);
-                    if (logChannel) {
-                        const embed = new EmbedBuilder()
-                            .setColor(THEME.COLORS.ERROR)
-                            .setTitle('Smart Anti-Swearing (Edit)')
-                            .setDescription('Blocked an edited message containing prohibited language.')
-                            .addFields(
-                                { name: 'User', value: `${oldMessage.author.tag} (\`${oldMessage.author.id}\`)`, inline: true },
-                                { name: 'Channel', value: `${newMessage.channel} (\`${channelId}\`)`, inline: true },
-                                { name: 'Warnings', value: `\`${nextCount}/${threshold}\``, inline: true },
-                                { name: 'Detected', value: `\`${(detection.matches || []).slice(0, 10).join(', ') || 'n/a'}\``, inline: false },
-                                { name: 'Before', value: `\`\`\`${String(oldMessage.content || '').slice(0, 450)}\`\`\``, inline: false },
-                                { name: 'After', value: `\`\`\`${String(newMessage.content || '').slice(0, 450)}\`\`\``, inline: false }
-                            )
-                            .setTimestamp();
-                        await logChannel.send({ embeds: [embed] }).catch(() => { });
-                    }
-
-                    if (nextCount >= threshold) {
-                        if (member?.moderatable) {
-                            await member.timeout(60 * 60 * 1000, `Smart Anti-Swearing: ${threshold} warnings`).catch(() => { });
-                        }
-                        await User.findOneAndUpdate(
-                            { userId: oldMessage.author.id, guildId: guild.id },
-                            { antiSwearWarningsCount: 0, antiSwearLastAt: new Date() },
-                            { upsert: true }
-                        ).catch(() => { });
-                    }
+                    await oldMessage.author.send('DO NOT SAY BAD WORDS!').catch(() => { });
 
                     return;
                 }
