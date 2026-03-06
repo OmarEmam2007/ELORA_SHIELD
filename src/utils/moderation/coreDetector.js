@@ -309,6 +309,42 @@ function buildSkeletonRegexFromCleanTerm(cleanTerm) {
     return new RegExp(`^${body}$`, 'i');
 }
 
+function isSingleCharToken(token) {
+    const t = String(token || '');
+    if (!t) return false;
+    const ultra = stripInternalSymbols(t);
+    if (!ultra) return false;
+    // exactly one Arabic letter or one ASCII letter/digit after stripping
+    return /^[a-zA-Z0-9\u0621-\u064Aء]$/.test(ultra);
+}
+
+function detectViolationForSingleCleanWord(cleanedWord, ultraNorm, rawWord, list, wl) {
+    if (!cleanedWord) return null;
+    if (GLOBAL_WHITELIST.has(cleanedWord) || wl.has(cleanedWord)) return null;
+
+    for (const term of list) {
+        if (!term || typeof term !== 'string') continue;
+        const cleanedTerm = normalizeWordDeep(term);
+        if (!cleanedTerm) continue;
+        if (GLOBAL_WHITELIST.has(cleanedTerm) || wl.has(cleanedTerm)) continue;
+
+        if (cleanedTerm.length <= 4) {
+            if (cleanedWord === cleanedTerm || (ultraNorm && ultraNorm === cleanedTerm)) {
+                return { term, rawWord, cleanedWord, ultraNorm: ultraNorm || '' };
+            }
+            continue;
+        }
+
+        const rx = buildPerWordFuzzyRegex(term);
+        if (!rx) continue;
+        if (rx.test(cleanedWord) || (ultraNorm && rx.test(ultraNorm))) {
+            return { term, rawWord, cleanedWord, ultraNorm: ultraNorm || '' };
+        }
+    }
+
+    return null;
+}
+
 function buildPerWordFuzzyRegex(term) {
     const t = normalizeWordDeep(term);
     if (!t) return null;
@@ -335,7 +371,7 @@ function buildPerWordFuzzyRegex(term) {
 
 function detectProfanityPerWord(content, { extraTerms = [], whitelist = [] } = {}) {
     const wordsRaw = splitIntoWords(content);
-    if (!wordsRaw.length) return { isViolation: false, matches: [] };
+    if (!wordsRaw.length) return { isViolation: false, matches: [], hits: [] };
 
     // Build blacklist once; de-dup at the term level.
     const list = [...new Set([...(Array.isArray(profanityList) ? profanityList : []), ...(Array.isArray(extraTerms) ? extraTerms : [])])];
@@ -347,7 +383,7 @@ function detectProfanityPerWord(content, { extraTerms = [], whitelist = [] } = {
     );
 
     const matches = [];
-
+    const hits = [];
     // STRICT LOOP RULE:
     // for each isolated word: clean -> check whole word against blacklist -> if no match, move to next word
     for (const rawWord of wordsRaw) {
@@ -359,32 +395,22 @@ function detectProfanityPerWord(content, { extraTerms = [], whitelist = [] } = {
 
         const ultraNorm = ultraCleanedWord ? normalizeWordDeep(ultraCleanedWord) : '';
 
-        for (const term of list) {
-            if (!term || typeof term !== 'string') continue;
-            const cleanedTerm = normalizeWordDeep(term);
-            if (!cleanedTerm) continue;
-            if (GLOBAL_WHITELIST.has(cleanedTerm) || wl.has(cleanedTerm)) continue;
+        const hit = detectViolationForSingleCleanWord(cleanedWord, ultraNorm, rawWord, list, wl);
+        if (hit) {
+            matches.push(hit.term);
+            hits.push(hit);
+            continue;
+        }
 
-            // NO PARTIAL MATCHES FOR SHORT BANNED WORDS (<= 4)
-            // must be identical to the cleaned word.
-            if (cleanedTerm.length <= 4) {
-                if (cleanedWord === cleanedTerm || (ultraNorm && ultraNorm === cleanedTerm)) {
-                    matches.push(term);
-                    break;
-                }
-                continue;
-            }
+        // If the word used symbols as bypass, try gap/wildcard and skeleton checks (LONG TERMS ONLY)
+        if (wordHadSymbols) {
+            for (const term of list) {
+                if (!term || typeof term !== 'string') continue;
+                const cleanedTerm = normalizeWordDeep(term);
+                if (!cleanedTerm) continue;
+                if (GLOBAL_WHITELIST.has(cleanedTerm) || wl.has(cleanedTerm)) continue;
+                if (cleanedTerm.length < 5) continue;
 
-            // ISOLATED REGEX RULE: always ^...$ (whole cleaned word only)
-            const rx = buildPerWordFuzzyRegex(term);
-            if (!rx) continue;
-            if (rx.test(cleanedWord) || (ultraNorm && rx.test(ultraNorm))) {
-                matches.push(term);
-                break;
-            }
-
-            // If the word used symbols as bypass, try gap/wildcard and skeleton checks (LONG TERMS ONLY)
-            if (wordHadSymbols) {
                 // 1) allow arbitrary symbol gaps between letters (p.o.r.n)
                 const gapPattern = buildWildcardGapPatternFromCleanTerm(cleanedTerm);
                 if (gapPattern) {
@@ -392,17 +418,19 @@ function detectProfanityPerWord(content, { extraTerms = [], whitelist = [] } = {
                     const gapRx = new RegExp(`^${gapPattern}$`, isAscii ? 'i' : undefined);
                     if (gapRx.test(String(rawWord || ''))) {
                         matches.push(term);
+                        hits.push({ term, rawWord, cleanedWord, ultraNorm: ultraNorm || '' });
                         break;
                     }
                 }
 
-                // 2) allow exactly one missing letter replaced by symbols (f*ck style, for long terms)
+                // 2) allow exactly one missing letter replaced by symbols (for long terms)
                 const missingOne = buildMissingOneLetterPatternFromCleanTerm(cleanedTerm);
                 if (missingOne) {
                     const isAscii = /^[a-z]+$/.test(cleanedTerm);
                     const missRx = new RegExp(`^${missingOne}$`, isAscii ? 'i' : undefined);
                     if (missRx.test(String(rawWord || ''))) {
                         matches.push(term);
+                        hits.push({ term, rawWord, cleanedWord, ultraNorm: ultraNorm || '' });
                         break;
                     }
                 }
@@ -411,14 +439,47 @@ function detectProfanityPerWord(content, { extraTerms = [], whitelist = [] } = {
                 const skRx = buildSkeletonRegexFromCleanTerm(cleanedTerm);
                 if (skRx && (skRx.test(cleanedWord) || (ultraNorm && skRx.test(ultraNorm)))) {
                     matches.push(term);
+                    hits.push({ term, rawWord, cleanedWord, ultraNorm: ultraNorm || '' });
                     break;
                 }
             }
         }
     }
 
-    if (!matches.length) return { isViolation: false, matches: [] };
-    return { isViolation: true, matches: [...new Set(matches)] };
+    // spaced-letter bypass: catch sequences like "ا ح ا" or "f u c k"
+    // Safety rule: only join runs of single-character tokens.
+    // - Arabic: allow len >= 3
+    // - English: allow len >= 4
+    for (let i = 0; i < wordsRaw.length; i++) {
+        if (!isSingleCharToken(wordsRaw[i])) continue;
+        let j = i;
+        const buf = [];
+        while (j < wordsRaw.length && isSingleCharToken(wordsRaw[j])) {
+            buf.push(stripInternalSymbols(wordsRaw[j]));
+            j++;
+        }
+
+        if (buf.length) {
+            const candidateRaw = buf.join('');
+            const candidateClean = normalizeWordDeep(candidateRaw);
+
+            const isArabic = /[\u0600-\u06FF]/.test(candidateClean);
+            const minLen = isArabic ? 3 : 4;
+
+            if (candidateClean && candidateClean.length >= minLen) {
+                const hit = detectViolationForSingleCleanWord(candidateClean, candidateClean, buf.join(' '), list, wl);
+                if (hit) {
+                    matches.push(hit.term);
+                    hits.push({ ...hit, rawWord: `spaced:${hit.rawWord}` });
+                }
+            }
+        }
+
+        i = j - 1;
+    }
+
+    if (!matches.length) return { isViolation: false, matches: [], hits: [] };
+    return { isViolation: true, matches: [...new Set(matches)], hits: hits.slice(0, 20) };
 }
 
 function tokenize(text) {
