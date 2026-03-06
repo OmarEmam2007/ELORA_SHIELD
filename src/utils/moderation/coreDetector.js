@@ -15,6 +15,17 @@ function isShortArabicToken(tok) {
     return Boolean(stripped) && stripped.length <= 2;
 }
 
+function isArabicRepeatToken(tok) {
+    const t = String(tok || '').trim();
+    if (!t) return false;
+    if (!/[\u0600-\u06FF]/.test(t)) return false;
+    const stripped = stripInternalSymbols(t);
+    if (!stripped) return false;
+    // Allow tokens that are a single Arabic letter repeated (e.g. "اااا")
+    // so evasions like "اح اااا" can be joined safely.
+    return /^([\u0621-\u064Aء])\1+$/.test(stripped);
+}
+
 // Initialize Gemini for context checks if available
 const genAI = (process.env.GEMINI_API_KEY && GoogleGenerativeAI) ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
 const geminiModelName = process.env.GEMINI_MODEL || 'gemini-2.0-flash-exp';
@@ -494,7 +505,7 @@ function detectProfanityPerWord(content, { extraTerms = [], whitelist = [] } = {
 
         while (j < wordsRaw.length) {
             const tok = wordsRaw[j];
-            if (!isSingleCharToken(tok) && !isShortArabicToken(tok)) break;
+            if (!isSingleCharToken(tok) && !isShortArabicToken(tok) && !isArabicRepeatToken(tok)) break;
 
             const stripped = stripInternalSymbols(wordsRaw[j]);
             const normTok = normalizeWordDeep(stripped);
