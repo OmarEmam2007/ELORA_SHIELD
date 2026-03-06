@@ -244,9 +244,16 @@ function normalizeEnglishWord(word) {
         .replace(/5/g, 's')
         .replace(/7/g, 't')
         .replace(/8/g, 'b');
-    // collapse repeats (fuuuuuck -> fuck)
-    w = w.replace(/([a-z])\1{1,}/g, '$1');
+    // collapse only HEAVY repeats (3+ extra) to avoid false positives like cook -> cok
+    // still catches extreme elongations (fuuuuuck, fuckkkkkkkk)
+    w = w.replace(/([a-z])\1{2,}/g, '$1');
     return w;
+}
+
+function collapseRepeatsAggressive(word) {
+    // used only as an additional matching variant for LONG blacklist terms
+    // collapse 2+ repeats: fuuuck -> fuck, fuckkkkk -> fuck
+    return String(word || '').replace(/([a-z])\1{1,}/gi, '$1').replace(/([\u0621-\u064Aء])\1{1,}/g, '$1');
 }
 
 function normalizeWordDeep(word) {
@@ -394,12 +401,32 @@ function detectProfanityPerWord(content, { extraTerms = [], whitelist = [] } = {
         if (GLOBAL_WHITELIST.has(cleanedWord) || wl.has(cleanedWord)) continue;
 
         const ultraNorm = ultraCleanedWord ? normalizeWordDeep(ultraCleanedWord) : '';
+        const ultraRepeatCollapsed = ultraNorm ? collapseRepeatsAggressive(ultraNorm) : '';
 
         const hit = detectViolationForSingleCleanWord(cleanedWord, ultraNorm, rawWord, list, wl);
         if (hit) {
             matches.push(hit.term);
             hits.push(hit);
             continue;
+        }
+
+        // Long-term repeat bypass (e.g., fuckkkkkkkkk): only for terms >= 5
+        if (ultraRepeatCollapsed && ultraRepeatCollapsed !== ultraNorm) {
+            for (const term of list) {
+                if (!term || typeof term !== 'string') continue;
+                const cleanedTerm = normalizeWordDeep(term);
+                if (!cleanedTerm) continue;
+                if (GLOBAL_WHITELIST.has(cleanedTerm) || wl.has(cleanedTerm)) continue;
+                if (cleanedTerm.length < 5) continue;
+
+                const rx = buildPerWordFuzzyRegex(term);
+                if (!rx) continue;
+                if (rx.test(ultraRepeatCollapsed)) {
+                    matches.push(term);
+                    hits.push({ term, rawWord, cleanedWord, ultraNorm: ultraRepeatCollapsed });
+                    break;
+                }
+            }
         }
 
         // If the word used symbols as bypass, try gap/wildcard and skeleton checks (LONG TERMS ONLY)
