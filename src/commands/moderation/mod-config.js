@@ -41,28 +41,8 @@ module.exports = {
                 .setDescription('List all currently whitelisted safe words/phrases for anti-swearing.')
         )
         .addSubcommand(sub =>
-            sub.setName('reset-warnings')
-                .setDescription('Reset a user\'s anti-swearing warning count in this server.')
-                .addUserOption(opt =>
-                    opt.setName('user')
-                        .setDescription('User to reset')
-                        .setRequired(true)
-                )
-        )
-        .addSubcommand(sub =>
-            sub.setName('threshold-set')
-                .setDescription('Set how many warnings lead to a 1-hour timeout (anti-swearing).')
-                .addIntegerOption(opt =>
-                    opt.setName('count')
-                        .setDescription('Warnings required before timeout (2-20)')
-                        .setMinValue(2)
-                        .setMaxValue(20)
-                        .setRequired(true)
-                )
-        )
-        .addSubcommand(sub =>
             sub.setName('blacklist-add')
-                .setDescription('Teach the bot a new prohibited word/phrase (anti-swearing).')
+                .setDescription('Add a custom word/phrase to the anti-swearing blacklist for this server.')
                 .addStringOption(opt =>
                     opt.setName('term')
                         .setDescription('Word or short phrase to block')
@@ -154,29 +134,6 @@ module.exports = {
             const shown = list.slice(0, 50).map((t, i) => `${i + 1}. ${t}`).join('\n');
             const extra = list.length > 50 ? `\n\n…and ${list.length - 50} more.` : '';
             return interaction.reply({ content: `Anti-swearing whitelist (${list.length}):\n${shown}${extra}`, ephemeral: true });
-        }
-
-        if (sub === 'reset-warnings') {
-            const user = interaction.options.getUser('user');
-            if (!user) return interaction.reply({ content: '❌ Please select a user.', ephemeral: true });
-
-            await User.findOneAndUpdate(
-                { guildId: interaction.guildId, userId: user.id },
-                { antiSwearWarningsCount: 0, antiSwearLastAt: new Date() },
-                { upsert: true }
-            ).catch(() => { });
-
-            return interaction.reply({ content: `✅ Reset anti-swearing warnings for ${user.tag}.`, ephemeral: true });
-        }
-
-        if (sub === 'threshold-set') {
-            const count = interaction.options.getInteger('count');
-            await ModSettings.findOneAndUpdate(
-                { guildId: interaction.guildId },
-                { antiSwearThreshold: count },
-                { upsert: true }
-            );
-            return interaction.reply({ content: `✅ Anti-swearing timeout threshold set to ${count} warnings.`, ephemeral: true });
         }
 
         if (sub === 'blacklist-add') {

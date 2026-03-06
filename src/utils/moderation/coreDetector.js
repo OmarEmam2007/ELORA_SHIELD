@@ -544,9 +544,40 @@ function buildWordRegex(term) {
     return new RegExp(body, 'i');
 }
 
+function normalizeEnglishForContainment(content) {
+    // Remove whitespace + symbols so spaced/symbol-split evasions collapse (e.g. "f u-c_k" -> "fuck")
+    return String(content || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+
+function buildInterruptedEnglishRegex(term) {
+    const t = String(term || '').toLowerCase().trim();
+    if (!t) return null;
+    // Only build for ASCII-ish terms; Arabic handled by token detector
+    if (/[\u0600-\u06FF]/.test(t)) return null;
+    const letters = t.replace(/[^a-z0-9]+/g, '');
+    if (!letters) return null;
+
+    // Allow non-alphanumerics (spaces, punctuation, symbols) between characters.
+    // This does NOT allow inserting other letters/numbers (so "fua..." won't match "fuck").
+    const parts = letters.split('').map(ch => escapeRegex(ch));
+    const pattern = parts.join('[^a-z0-9]*');
+    return new RegExp(pattern, 'i');
+}
+
+function isCanonicalEnglishBaseTerm(term) {
+    const t = String(term || '').toLowerCase().trim();
+    if (!t) return false;
+    // Only pure alphanumeric English terms should be used for evasion-proof matching.
+    // Symbol variants like "a$$" are handled via boundary match only to avoid false positives
+    // (e.g. "class" contains "ass" once symbols are removed).
+    return /^[a-z0-9]+$/i.test(t);
+}
+
 function detectProfanityEnglishBoundary(content, { extraTerms = [], whitelist = [] } = {}) {
     const raw = String(content || '');
     if (!raw.trim()) return { isViolation: false, matches: [] };
+
+    const normalized = normalizeEnglishForContainment(raw);
 
     const list = [...new Set([...(Array.isArray(profanityList) ? profanityList : []), ...(Array.isArray(extraTerms) ? extraTerms : [])])];
     const wl = new Set((Array.isArray(whitelist) ? whitelist : []).map(t => String(t || '').toLowerCase()).filter(Boolean));
@@ -556,12 +587,21 @@ function detectProfanityEnglishBoundary(content, { extraTerms = [], whitelist = 
         const t = String(term).toLowerCase().trim();
         if (!t) continue;
         if (wl.has(t)) continue;
-        // English-only terms: use \b boundaries to prevent substring matches
+        // English-only terms: use \b boundaries to prevent substring matches in raw content
         if (!/^[a-z0-9\s\W_]+$/i.test(t) || /[\u0600-\u06FF]/.test(t)) continue;
 
         const escaped = escapeRegex(t);
-        const rx = new RegExp(`\\b${escaped}\\b`, 'i');
-        if (rx.test(raw)) return { isViolation: true, matches: [term] };
+        const boundaryRx = new RegExp(`\\b${escaped}\\b`, 'i');
+        if (boundaryRx.test(raw)) return { isViolation: true, matches: [term] };
+
+        if (isCanonicalEnglishBaseTerm(t) && t.length >= 4) {
+            // Evasion-proof: allow symbol/space interruptions between letters
+            const interruptedRx = buildInterruptedEnglishRegex(t);
+            if (interruptedRx && interruptedRx.test(raw)) return { isViolation: true, matches: [term] };
+
+            // Evasion-proof: containment check in fully normalized string
+            if (normalized.includes(t)) return { isViolation: true, matches: [term] };
+        }
     }
 
     return { isViolation: false, matches: [] };

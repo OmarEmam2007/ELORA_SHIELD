@@ -1,8 +1,10 @@
-const { PermissionFlagsBits } = require('discord.js');
+const { PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const { checkLink } = require('../../utils/securityUtils');
 const ModSettings = require('../../models/ModSettings');
 const GuildSecurityConfig = require('../../models/GuildSecurityConfig');
 const { detectProfanitySimple } = require('../../utils/moderation/coreDetector');
+const THEME = require('../../utils/theme');
+const { getGuildLogChannel } = require('../../utils/getGuildLogChannel');
 const { handlePrefixCommand } = require('../../handlers/prefixCommandHandler');
 
 module.exports = {
@@ -101,6 +103,24 @@ module.exports = {
                     await message.delete().catch(() => {});
 
                     await message.author.send('DO NOT SAY BAD WORDS!').catch(() => {});
+
+                    const logChannel = await getGuildLogChannel(message.guild, client).catch(() => null);
+                    if (logChannel) {
+                        const detected = (detection.matches || []).slice(0, 10);
+                        const embed = new EmbedBuilder()
+                            .setColor(THEME.COLORS.ERROR)
+                            .setTitle('Smart Anti-Swearing')
+                            .setDescription('Blocked a message containing prohibited language.')
+                            .addFields(
+                                { name: 'User', value: `${message.author.tag} (\`${message.author.id}\`)`, inline: true },
+                                { name: 'Channel', value: `${message.channel} (\`${message.channelId}\`)`, inline: true },
+                                { name: 'Detected', value: `\`${detected.join(', ') || 'n/a'}\``, inline: false },
+                                { name: 'Message', value: `\`\`\`${String(message.content || '').slice(0, 900)}\`\`\``, inline: false }
+                            )
+                            .setTimestamp();
+
+                        await logChannel.send({ embeds: [embed] }).catch(() => {});
+                    }
                     return;
                 }
             }

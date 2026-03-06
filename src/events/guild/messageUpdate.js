@@ -2,6 +2,7 @@ const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const { getGuildLogChannel } = require('../../utils/getGuildLogChannel');
 const ModSettings = require('../../models/ModSettings');
 const { detectProfanitySimple } = require('../../utils/moderation/coreDetector');
+const THEME = require('../../utils/theme');
 
 module.exports = {
     name: 'messageUpdate',
@@ -89,6 +90,24 @@ module.exports = {
                     });
 
                     await oldMessage.author.send('DO NOT SAY BAD WORDS!').catch(() => { });
+
+                    const logChannel = await getGuildLogChannel(guild, client).catch(() => null);
+                    if (logChannel) {
+                        const detected = (detection.matches || []).slice(0, 10);
+                        const embed = new EmbedBuilder()
+                            .setColor(THEME.COLORS.ERROR)
+                            .setTitle('Smart Anti-Swearing (Edit)')
+                            .setDescription('Blocked an edited message containing prohibited language.')
+                            .addFields(
+                                { name: 'User', value: `${oldMessage.author.tag} (\`${oldMessage.author.id}\`)`, inline: true },
+                                { name: 'Channel', value: `${newMessage.channel} (\`${channelId}\`)`, inline: true },
+                                { name: 'Detected', value: `\`${detected.join(', ') || 'n/a'}\``, inline: false },
+                                { name: 'Before', value: `\`\`\`${String(oldMessage.content || '').slice(0, 450)}\`\`\``, inline: false },
+                                { name: 'After', value: `\`\`\`${String(newMessage.content || '').slice(0, 450)}\`\`\``, inline: false }
+                            )
+                            .setTimestamp();
+                        await logChannel.send({ embeds: [embed] }).catch(() => { });
+                    }
 
                     return;
                 }
