@@ -13,6 +13,8 @@ const modSettingsSchema = new mongoose.Schema({
     customBlacklist: { type: [String], default: [] },
     antiSwearWhitelist: { type: [String], default: [] },
     antiSwearThreshold: { type: Number, default: 5 },
+    verificationPanelChannelId: { type: String, default: null },
+    verificationPanelMessageId: { type: String, default: null },
     autoActions: {
         mild: { type: String, default: 'warn' }, // warn, delete
         severe: { type: String, default: 'timeout' }, // timeout, delete
