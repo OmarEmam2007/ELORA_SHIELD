@@ -3,6 +3,7 @@ const THEME = require('../../utils/theme');
 const { buildAssetAttachment } = require('../../utils/responseAssets');
 
 const DONE_EMOJI = '<:555:1479967165619634348>';
+const ERROR_EMOJI = '<:661071whitex:1479988133704761515>';
 
 module.exports = {
     name: 'ban',
@@ -42,13 +43,13 @@ module.exports = {
             // Prefix: .ban @User [Reason]
             const targetId = commandArgs[0]?.replace(/[<@!>]/g, '');
             if (!targetId) {
-                return interaction.reply(`${DONE_EMOJI} **ᴜꜱᴀɢᴇ: .ʙᴀɴ @ᴜꜱᴇʀ [ʀᴇᴀꜱᴏɴ]**`);
+                return interaction.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ʙᴀɴ @ᴜꜱᴇʀ [ʀᴇᴀꜱᴏɴ]**`);
             }
 
             try {
                 targetUser = await bot.users.fetch(targetId);
             } catch (e) {
-                return interaction.reply(`${DONE_EMOJI} **ᴜꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ.**`);
+                return interaction.reply(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ.**`);
             }
 
             reason = commandArgs.slice(1).join(' ') || 'Violation of Lunar Protocols';
@@ -69,7 +70,7 @@ module.exports = {
                     if (badAsset?.url) err.setImage(badAsset.url);
                     return interaction.reply({ embeds: [err], files: badAsset?.attachment ? [badAsset.attachment] : [], ephemeral: true });
                 }
-                return interaction.reply(`${DONE_EMOJI} **ɪ ᴄᴀɴ'ᴛ ʙᴀɴ ᴛʜɪꜱ ᴜꜱᴇʀ.**`);
+                return interaction.reply(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ʙᴀɴ ᴛʜɪꜱ ᴜꜱᴇʀ.**`);
             }
         }
 
@@ -148,7 +149,7 @@ module.exports = {
                 if (badAsset?.url) errEmbed.setImage(badAsset.url);
                 await interaction.editReply({ embeds: [errEmbed], files: badAsset?.attachment ? [badAsset.attachment] : [] });
             } else {
-                await interaction.reply(`${DONE_EMOJI} **ᴇʀʀᴏʀ.**`);
+                await interaction.reply(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);
             }
         }
     },

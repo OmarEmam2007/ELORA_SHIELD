@@ -3,6 +3,7 @@ const THEME = require('../../utils/theme');
 const { buildAssetAttachment } = require('../../utils/responseAssets');
 
 const DONE_EMOJI = '<:555:1479967165619634348>';
+const ERROR_EMOJI = '<:661071whitex:1479988133704761515>';
 
 module.exports = {
     name: 'kick',
@@ -39,13 +40,13 @@ module.exports = {
             // Prefix: .k @User [Reason]
             const targetId = commandArgs[0]?.replace(/[<@!>]/g, '');
             if (!targetId) {
-                return mainMsg.reply(`${DONE_EMOJI} **ᴜꜱᴀɢᴇ: .ᴋ @ᴜꜱᴇʀ [ʀᴇᴀꜱᴏɴ]**`);
+                return mainMsg.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴋ @ᴜꜱᴇʀ [ʀᴇᴀꜱᴏɴ]**`);
             }
 
             try {
                 targetUser = await bot.users.fetch(targetId);
             } catch (e) {
-                return mainMsg.reply(`${DONE_EMOJI} **ᴜꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ.**`);
+                return mainMsg.reply(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ.**`);
             }
 
             reason = commandArgs.slice(1).join(' ') || 'Minor Infraction';
@@ -54,7 +55,7 @@ module.exports = {
         const member = await mainMsg.guild.members.fetch(targetUser.id).catch(() => null);
 
         if (!member) {
-            return mainMsg.reply(`${DONE_EMOJI} **ᴜꜱᴇʀ ɪꜱ ɴᴏᴛ ɪɴ ᴛʜɪꜱ ꜱᴇʀᴠᴇʀ.**`);
+            return mainMsg.reply(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɪꜱ ɴᴏᴛ ɪɴ ᴛʜɪꜱ ꜱᴇʀᴠᴇʀ.**`);
         }
 
         const SPECIAL_EXECUTOR_ID = '1380794290350981130';
@@ -63,7 +64,7 @@ module.exports = {
             if (isSlash) {
                 return interaction.reply({ content: "AhMeD_kErA has complete control now, i can't kick him." });
             }
-            return mainMsg.reply(`${DONE_EMOJI} **ɪ ᴄᴀɴ'ᴛ ᴋɪᴄᴋ ᴛʜɪꜱ ᴜꜱᴇʀ.**`);
+            return mainMsg.reply(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ᴋɪᴄᴋ ᴛʜɪꜱ ᴜꜱᴇʀ.**`);
         }
 
         if (!member.kickable) {
@@ -75,7 +76,7 @@ module.exports = {
                 if (badAsset?.url) err.setImage(badAsset.url);
                 return interaction.reply({ embeds: [err], files: badAsset?.attachment ? [badAsset.attachment] : [], ephemeral: true });
             }
-            return mainMsg.reply(`${DONE_EMOJI} **ɪ ᴄᴀɴ'ᴛ ᴋɪᴄᴋ ᴛʜɪꜱ ᴜꜱᴇʀ.**`);
+            return mainMsg.reply(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ᴋɪᴄᴋ ᴛʜɪꜱ ᴜꜱᴇʀ.**`);
         }
 
         // --- 2. Pseudo-Animation ---
@@ -141,7 +142,7 @@ module.exports = {
                 if (badAsset?.url) errEmbed.setImage(badAsset.url);
                 await mainMsg.editReply({ embeds: [errEmbed], files: badAsset?.attachment ? [badAsset.attachment] : [] });
             } else {
-                await mainMsg.reply(`${DONE_EMOJI} **ᴇʀʀᴏʀ.**`);
+                await mainMsg.reply(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);
             }
         }
     },

@@ -4,6 +4,7 @@ const THEME = require('../../utils/theme');
 const { buildAssetAttachment } = require('../../utils/responseAssets');
 
 const DONE_EMOJI = '<:555:1479967165619634348>';
+const ERROR_EMOJI = '<:661071whitex:1479988133704761515>';
 
 module.exports = {
     name: 'warn',
@@ -53,7 +54,7 @@ module.exports = {
             const sub = commandArgs[0]?.toLowerCase();
             if (sub === 'list') {
                 const targetId = commandArgs[1]?.replace(/[<@!>]/g, '');
-                if (!targetId) return mainMsg.reply(`${DONE_EMOJI} **ᴜꜱᴀɢᴇ: .ᴡᴀʀɴ ʟɪꜱᴛ @ᴜꜱᴇʀ**`);
+                if (!targetId) return mainMsg.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴡᴀʀɴ ʟɪꜱᴛ @ᴜꜱᴇʀ**`);
                 
                 try {
                     const target = await bot.users.fetch(targetId);
@@ -68,11 +69,11 @@ module.exports = {
 
                     return mainMsg.reply(`${DONE_EMOJI} **ᴡᴀʀɴɪɴɢꜱ ꜰᴏʀ ${target.tag}:**\n${desc}`);
                 } catch (e) {
-                    return mainMsg.reply(`${DONE_EMOJI} **ɪɴᴠᴀʟɪᴅ ᴜꜱᴇʀ.**`);
+                    return mainMsg.reply(`${ERROR_EMOJI} **ɪɴᴠᴀʟɪᴅ ᴜꜱᴇʀ.**`);
                 }
             } else if (sub === 'clear') {
                 const targetId = commandArgs[1]?.replace(/[<@!>]/g, '');
-                if (!targetId) return mainMsg.reply(`${DONE_EMOJI} **ᴜꜱᴀɢᴇ: .ᴡᴀʀɴ ᴄʟᴇᴀʀ @ᴜꜱᴇʀ**`);
+                if (!targetId) return mainMsg.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴡᴀʀɴ ᴄʟᴇᴀʀ @ᴜꜱᴇʀ**`);
                 
                 try {
                     const target = await bot.users.fetch(targetId);
@@ -80,14 +81,14 @@ module.exports = {
                     const deleted = res?.deletedCount || 0;
                     return mainMsg.reply(`${DONE_EMOJI} **ᴄʟᴇᴀʀᴇᴅ ${deleted} ᴡᴀʀɴɪɴɢ(s) ꜰᴏʀ ${target.tag}.**`);
                 } catch (e) {
-                    return mainMsg.reply(`${DONE_EMOJI} **ɪɴᴠᴀʟɪᴅ ᴜꜱᴇʀ.**`);
+                    return mainMsg.reply(`${ERROR_EMOJI} **ɪɴᴠᴀʟɪᴅ ᴜꜱᴇʀ.**`);
                 }
             } else {
                 // Default to 'add'
                 const targetId = commandArgs[0]?.replace(/[<@!>]/g, '');
                 const reason = commandArgs.slice(1).join(' ') || 'General Warning';
                 
-                if (!targetId) return mainMsg.reply(`${DONE_EMOJI} **ᴜꜱᴀɢᴇ: .ᴡᴀʀɴ @ᴜꜱᴇʀ [ʀᴇᴀꜱᴏɴ]**`);
+                if (!targetId) return mainMsg.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴡᴀʀɴ @ᴜꜱᴇʀ [ʀᴇᴀꜱᴏɴ]**`);
                 
                 try {
                     const targetUser = await bot.users.fetch(targetId);
@@ -119,7 +120,7 @@ module.exports = {
                     return mainMsg.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴜꜱᴇʀ ʜᴀꜱ ʙᴇᴇɴ ᴡᴀʀɴᴇᴅ.**`);
                 } catch (e) {
                     console.error(e);
-                    return mainMsg.reply(`${DONE_EMOJI} **ᴇʀʀᴏʀ.**`);
+                    return mainMsg.reply(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);
                 }
             }
         }

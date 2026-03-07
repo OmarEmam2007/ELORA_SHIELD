@@ -1,6 +1,7 @@
 const { PermissionFlagsBits, ChannelType } = require('discord.js');
 
 const DONE_EMOJI = '<:555:1479967165619634348>';
+const ERROR_EMOJI = '<:661071whitex:1479988133704761515>';
 
 module.exports = {
     name: 'lock',
@@ -9,12 +10,12 @@ module.exports = {
         if (!message.guild) return;
 
         if (!message.member.permissions.has(PermissionFlagsBits.ManageChannels)) {
-            return message.reply(`${DONE_EMOJI} **ʏᴏᴜ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ᴄʜᴀɴɴᴇʟꜱ ᴛᴏ ᴜꜱᴇ ᴛʜɪꜱ.**`);
+            return message.reply(`${ERROR_EMOJI} **ʏᴏᴜ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ᴄʜᴀɴɴᴇʟꜱ ᴛᴏ ᴜꜱᴇ ᴛʜɪꜱ.**`);
         }
 
         const me = message.guild.members.me || (await message.guild.members.fetchMe().catch(() => null));
         if (!me?.permissions.has(PermissionFlagsBits.ManageChannels)) {
-            return message.reply(`${DONE_EMOJI} **ɪ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ᴄʜᴀɴɴᴇʟꜱ ᴘᴇʀᴍɪꜱꜱɪᴏɴ.**`);
+            return message.reply(`${ERROR_EMOJI} **ɪ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ᴄʜᴀɴɴᴇʟꜱ ᴘᴇʀᴍɪꜱꜱɪᴏɴ.**`);
         }
 
         const lockAll = (args[0] || '').toLowerCase() === 'all';
@@ -60,7 +61,7 @@ module.exports = {
         try {
             if (!lockAll) {
                 const ok = await applyLock(message.channel);
-                if (!ok) return message.reply(`${DONE_EMOJI} **ᴛʜɪꜱ ᴄʜᴀɴɴᴇʟ ᴛʏᴘᴇ ɪꜱ ɴᴏᴛ ꜱᴜᴘᴘᴏʀᴛᴇᴅ.**`);
+                if (!ok) return message.reply(`${ERROR_EMOJI} **ᴛʜɪꜱ ᴄʜᴀɴɴᴇʟ ᴛʏᴘᴇ ɪꜱ ɴᴏᴛ ꜱᴜᴘᴘᴏʀᴛᴇᴅ.**`);
                 return message.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴄʜᴀɴɴᴇʟ ʜᴀꜱ ʙᴇᴇɴ ʟᴏᴄᴋᴇᴅ.**`);
             }
 
@@ -82,7 +83,7 @@ module.exports = {
 
             return message.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴄʜᴀɴɴᴇʟ ʜᴀꜱ ʙᴇᴇɴ ʟᴏᴄᴋᴇᴅ.**`);
         } catch (e) {
-            return message.reply(`${DONE_EMOJI} **ᴇʀʀᴏʀ.**`);
+            return message.reply(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);
         }
     },
 };
