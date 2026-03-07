@@ -2,6 +2,8 @@ const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('disc
 const THEME = require('../../utils/theme');
 const { buildAssetAttachment } = require('../../utils/responseAssets');
 
+const DONE_EMOJI = '<:555:1479967165619634348>';
+
 module.exports = {
     name: 'ban',
     aliases: ['ban', 'اديهولوا', 'شد', 'ببتاعي'],
@@ -37,17 +39,16 @@ module.exports = {
             reason = interaction.options.getString('reason') || 'Violation of Lunar Protocols';
             deleteMsgs = interaction.options.getBoolean('delete_messages') || false;
         } else {
-            // Prefix: !ban @User [Reason]
+            // Prefix: .ban @User [Reason]
             const targetId = commandArgs[0]?.replace(/[<@!>]/g, '');
             if (!targetId) {
-                const guide = new EmbedBuilder().setColor(THEME.COLORS.ERROR).setDescription(`${THEME.ICONS.CROSS} **Usage:** \`!ban @User [Reason]\``);
-                return interaction.reply({ embeds: [guide] });
+                return interaction.reply(`${DONE_EMOJI} **ᴜꜱᴀɢᴇ: .ʙᴀɴ @ᴜꜱᴇʀ [ʀᴇᴀꜱᴏɴ]**`);
             }
 
             try {
                 targetUser = await bot.users.fetch(targetId);
             } catch (e) {
-                return interaction.reply({ content: `${THEME.ICONS.CROSS} **Target Lost:** User not found in this sector.`, ephemeral: true });
+                return interaction.reply(`${DONE_EMOJI} **ᴜꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ.**`);
             }
 
             reason = commandArgs.slice(1).join(' ') || 'Violation of Lunar Protocols';
@@ -58,46 +59,40 @@ module.exports = {
 
         if (member) {
             if (!member.bannable) {
-                const err = new EmbedBuilder()
-                    .setColor(THEME.COLORS.ERROR)
-                    .setAuthor({ name: 'Access Denied', iconURL: THEME.ICONS.CROSS })
-                    .setDescription(`**Target Shielded:** I cannot ban **${targetUser.tag}** (Higher or Equal Clearance).`)
-                    .setFooter(THEME.FOOTER);
-                const badAsset = buildAssetAttachment('wrong');
-                if (badAsset?.url) err.setImage(badAsset.url);
-                return interaction.reply({ embeds: [err], files: badAsset?.attachment ? [badAsset.attachment] : [], ephemeral: true });
+                if (isSlash) {
+                    const err = new EmbedBuilder()
+                        .setColor(THEME.COLORS.ERROR)
+                        .setAuthor({ name: 'Access Denied', iconURL: THEME.ICONS.CROSS })
+                        .setDescription(`**Target Shielded:** I cannot ban **${targetUser.tag}** (Higher or Equal Clearance).`)
+                        .setFooter(THEME.FOOTER);
+                    const badAsset = buildAssetAttachment('wrong');
+                    if (badAsset?.url) err.setImage(badAsset.url);
+                    return interaction.reply({ embeds: [err], files: badAsset?.attachment ? [badAsset.attachment] : [], ephemeral: true });
+                }
+                return interaction.reply(`${DONE_EMOJI} **ɪ ᴄᴀɴ'ᴛ ʙᴀɴ ᴛʜɪꜱ ᴜꜱᴇʀ.**`);
             }
         }
 
-        // --- 2. Pseudo-Animation (The "Moon" Phase) ---
+        // --- 2. Pseudo-Animation (slash only) ---
         let responseMsg;
         const frames = THEME.ANIMATIONS.EXECUTING_BAN;
-
-        const initialEmbed = new EmbedBuilder()
-            .setColor(THEME.COLORS.WARNING)
-            .setDescription(`${frames[0]}`);
-
         const loadingAsset = buildAssetAttachment('loading');
-        if (loadingAsset?.url) initialEmbed.setImage(loadingAsset.url);
-
         if (isSlash) {
+            const initialEmbed = new EmbedBuilder()
+                .setColor(THEME.COLORS.WARNING)
+                .setDescription(`${frames[0]}`);
+            if (loadingAsset?.url) initialEmbed.setImage(loadingAsset.url);
             await interaction.reply({ embeds: [initialEmbed], files: loadingAsset?.attachment ? [loadingAsset.attachment] : [] });
             responseMsg = interaction;
-        } else {
-            responseMsg = await interaction.reply({ embeds: [initialEmbed], files: loadingAsset?.attachment ? [loadingAsset.attachment] : [] });
-        }
 
-        // Play Animation
-        for (let i = 1; i < frames.length; i++) {
-            await new Promise(r => setTimeout(r, 800)); // 0.8s per frame
-            const updateEmbed = new EmbedBuilder()
-                .setColor(THEME.COLORS.WARNING)
-                .setDescription(`${frames[i]}`);
-
-            if (loadingAsset?.url) updateEmbed.setImage(loadingAsset.url);
-
-            if (isSlash) await interaction.editReply({ embeds: [updateEmbed] });
-            else await responseMsg.edit({ embeds: [updateEmbed] });
+            for (let i = 1; i < frames.length; i++) {
+                await new Promise(r => setTimeout(r, 800));
+                const updateEmbed = new EmbedBuilder()
+                    .setColor(THEME.COLORS.WARNING)
+                    .setDescription(`${frames[i]}`);
+                if (loadingAsset?.url) updateEmbed.setImage(loadingAsset.url);
+                await interaction.editReply({ embeds: [updateEmbed] });
+            }
         }
 
         // --- 3. Execution ---
@@ -136,20 +131,25 @@ module.exports = {
             const okAsset = buildAssetAttachment('diamond');
             if (okAsset?.url) successEmbed.setImage(okAsset.url);
 
-            if (isSlash) await interaction.editReply({ embeds: [successEmbed], files: okAsset?.attachment ? [okAsset.attachment] : [] });
-            else await responseMsg.edit({ embeds: [successEmbed], files: okAsset?.attachment ? [okAsset.attachment] : [] });
+            if (isSlash) {
+                await interaction.editReply({ embeds: [successEmbed], files: okAsset?.attachment ? [okAsset.attachment] : [] });
+            } else {
+                await interaction.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴜꜱᴇʀ ʜᴀꜱ ʙᴇᴇɴ ʙᴀɴɴᴇᴅ.**`);
+            }
 
         } catch (error) {
             console.error(error);
-            const errEmbed = new EmbedBuilder()
-                .setColor(THEME.COLORS.ERROR)
-                .setDescription('❌ **Critical Failure:** Ejection system malfunction.');
+            if (isSlash) {
+                const errEmbed = new EmbedBuilder()
+                    .setColor(THEME.COLORS.ERROR)
+                    .setDescription('❌ **Critical Failure:** Ejection system malfunction.');
 
-            const badAsset = buildAssetAttachment('wrong');
-            if (badAsset?.url) errEmbed.setImage(badAsset.url);
-
-            if (isSlash) await interaction.editReply({ embeds: [errEmbed], files: badAsset?.attachment ? [badAsset.attachment] : [] });
-            else await responseMsg.edit({ embeds: [errEmbed], files: badAsset?.attachment ? [badAsset.attachment] : [] });
+                const badAsset = buildAssetAttachment('wrong');
+                if (badAsset?.url) errEmbed.setImage(badAsset.url);
+                await interaction.editReply({ embeds: [errEmbed], files: badAsset?.attachment ? [badAsset.attachment] : [] });
+            } else {
+                await interaction.reply(`${DONE_EMOJI} **ᴇʀʀᴏʀ.**`);
+            }
         }
     },
 };

@@ -1,17 +1,20 @@
 const { PermissionFlagsBits, ChannelType } = require('discord.js');
 
+const DONE_EMOJI = '<:555:1479967165619634348>';
+
 module.exports = {
     name: 'unlock',
+    aliases: ['unlock'],
     async execute(message, client, args) {
         if (!message.guild) return;
 
         if (!message.member.permissions.has(PermissionFlagsBits.ManageChannels)) {
-            return message.reply('❌ You need **Manage Channels** permission to use this.');
+            return message.reply(`${DONE_EMOJI} **ʏᴏᴜ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ᴄʜᴀɴɴᴇʟꜱ ᴛᴏ ᴜꜱᴇ ᴛʜɪꜱ.**`);
         }
 
         const me = message.guild.members.me || (await message.guild.members.fetchMe().catch(() => null));
         if (!me?.permissions.has(PermissionFlagsBits.ManageChannels)) {
-            return message.reply('❌ I need **Manage Channels** permission.');
+            return message.reply(`${DONE_EMOJI} **ɪ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ᴄʜᴀɴɴᴇʟꜱ ᴘᴇʀᴍɪꜱꜱɪᴏɴ.**`);
         }
 
         const unlockAll = (args[0] || '').toLowerCase() === 'all';
@@ -58,9 +61,8 @@ module.exports = {
         try {
             if (!unlockAll) {
                 const ok = await applyUnlock(message.channel);
-                if (!ok) return message.reply('❌ This channel type is not supported for unlock.');
-                const cleared = message.channel.__eloraUnlockCleared || 0;
-                return message.reply(`🔓 Channel unlocked.${cleared ? ` (Cleared ${cleared} role overwrite(s))` : ''}`);
+                if (!ok) return message.reply(`${DONE_EMOJI} **ᴛʜɪꜱ ᴄʜᴀɴɴᴇʟ ᴛʏᴘᴇ ɪꜱ ɴᴏᴛ ꜱᴜᴘᴘᴏʀᴛᴇᴅ.**`);
+                return message.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴄʜᴀɴɴᴇʟ ʜᴀꜱ ʙᴇᴇɴ ᴜɴʟᴏᴄᴋᴇᴅ.**`);
             }
 
             let okCount = 0;
@@ -79,9 +81,9 @@ module.exports = {
                 }
             }
 
-            return message.reply(`🔓 Unlocked channels: **${okCount}**${failCount ? ` | Failed: **${failCount}**` : ''}`);
+            return message.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴄʜᴀɴɴᴇʟ ʜᴀꜱ ʙᴇᴇɴ ᴜɴʟᴏᴄᴋᴇᴅ.**`);
         } catch (e) {
-            return message.reply(`❌ Error: ${e.message || e}`);
+            return message.reply(`${DONE_EMOJI} **ᴇʀʀᴏʀ.**`);
         }
     },
 };

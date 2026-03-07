@@ -1,5 +1,6 @@
-const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
-const THEME = require('../../utils/theme');
+const { PermissionFlagsBits } = require('discord.js');
+
+const DONE_EMOJI = '<:555:1479967165619634348>';
 
 const SMALL_CAPS_MAP = {
     'ᴀ': 'a', 'ʙ': 'b', 'ᴄ': 'c', 'ᴅ': 'd', 'ᴇ': 'e', 'ꜰ': 'f', 'ғ': 'f',
@@ -47,153 +48,58 @@ function findRole(guild, roleQuery) {
     return null;
 }
 
-function epicEmbed({ title, color, description, fields, member, footerIconURL }) {
-    const e = new EmbedBuilder()
-        .setColor(color)
-        .setTitle(title)
-        .setDescription(description)
-        .setFooter({ text: THEME.FOOTER.text, iconURL: footerIconURL || THEME.FOOTER.iconURL })
-        .setTimestamp();
-
-    if (member?.user?.displayAvatarURL) {
-        e.setThumbnail(member.user.displayAvatarURL({ dynamic: true }));
-    }
-
-    if (fields?.length) e.addFields(fields);
-    return e;
-}
-
 module.exports = {
     name: 'del',
     aliases: ['rem', 'remove'],
     async execute(message, client, args) {
-        const noPermEmbed = epicEmbed({
-            title: '🛡️ Sovereign Nexus • Access Denied',
-            color: THEME.COLORS.ERROR,
-            description: '❌ You do not have permission to remove roles.',
-            member: message.member
-        });
-
         if (!message.member?.permissions?.has(PermissionFlagsBits.ManageRoles)) {
-            return message.reply({ embeds: [noPermEmbed] });
+            return message.reply(`${DONE_EMOJI} **ʏᴏᴜ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ʀᴏʟᴇꜱ ᴛᴏ ᴜꜱᴇ ᴛʜɪꜱ.**`);
         }
 
         const isRoleSubcommand = args[0]?.toLowerCase() === 'role';
         if (!isRoleSubcommand) {
-            const embed = epicEmbed({
-                title: '🛰️ Command Matrix • Unknown Operation',
-                color: THEME.COLORS.WARNING,
-                description: '⚠️ Use this format:\n\n`elora del role @user astray`',
-                member: message.member
-            });
-            return message.reply({ embeds: [embed] });
+            return message.reply(`${DONE_EMOJI} **ᴜꜱᴀɢᴇ: ᴇʟᴏʀᴀ ᴅᴇʟ ʀᴏʟᴇ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
         }
 
         const targetMember = message.mentions.members.first();
         if (!targetMember) {
-            const embed = epicEmbed({
-                title: '🛰️ Role Matrix • Missing Target',
-                color: THEME.COLORS.WARNING,
-                description: '⚠️ Mention a user first.\n\nExample: `elora del role @user astray`',
-                member: message.member
-            });
-            return message.reply({ embeds: [embed] });
+            return message.reply(`${DONE_EMOJI} **ᴜꜱᴀɢᴇ: ᴇʟᴏʀᴀ ᴅᴇʟ ʀᴏʟᴇ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
         }
 
         const roleQuery = args.slice(2).join(' ').trim();
         if (!roleQuery) {
-            const embed = epicEmbed({
-                title: '🛰️ Role Matrix • Missing Role',
-                color: THEME.COLORS.WARNING,
-                description: '⚠️ Provide a role name (or role mention / role id).\n\nExample: `elora del role @user astray`',
-                member: message.member
-            });
-            return message.reply({ embeds: [embed] });
+            return message.reply(`${DONE_EMOJI} **ᴜꜱᴀɢᴇ: ᴇʟᴏʀᴀ ᴅᴇʟ ʀᴏʟᴇ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
         }
 
         const role = findRole(message.guild, roleQuery);
         if (!role) {
-            const embed = epicEmbed({
-                title: '🌑 Lunar Index • Role Not Found',
-                color: THEME.COLORS.ERROR,
-                description: `❌ I couldn't locate a role matching: **${roleQuery}**\n\nTip: you can also use a role mention like <@&roleId>.`,
-                member: message.member
-            });
-            return message.reply({ embeds: [embed] });
+            return message.reply(`${DONE_EMOJI} **ʀᴏʟᴇ ɴᴏᴛ ꜰᴏᴜɴᴅ.**`);
         }
 
         if (role.managed || role.name === '@everyone') {
-            const embed = epicEmbed({
-                title: '🛡️ Role Matrix • Protected Role',
-                color: THEME.COLORS.ERROR,
-                description: `❌ This role is protected and cannot be removed: ${role}`,
-                member: message.member
-            });
-            return message.reply({ embeds: [embed] });
+            return message.reply(`${DONE_EMOJI} **ɪ ᴄᴀɴ'ᴛ ʀᴇᴍᴏᴠᴇ ᴛʜɪꜱ ʀᴏʟᴇ.**`);
         }
 
         const botMember = message.guild.members.me;
         if (!botMember?.permissions?.has(PermissionFlagsBits.ManageRoles)) {
-            const embed = epicEmbed({
-                title: '⚠️ Role Matrix • Bot Missing Permission',
-                color: THEME.COLORS.ERROR,
-                description: '❌ I need **Manage Roles** permission to do that.',
-                member: message.member
-            });
-            return message.reply({ embeds: [embed] });
+            return message.reply(`${DONE_EMOJI} **ɪ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ʀᴏʟᴇꜱ ᴘᴇʀᴍɪꜱꜱɪᴏɴ.**`);
         }
 
         if (!role.editable || (botMember.roles.highest?.position ?? 0) <= role.position) {
-            const embed = epicEmbed({
-                title: '⛔ Hierarchy Lock',
-                color: THEME.COLORS.ERROR,
-                description: `❌ I can't remove ${role} بسبب ترتيب الرولات (hierarchy).\n\nارفع رول البوت فوق الرول ده.`,
-                member: message.member
-            });
-            return message.reply({ embeds: [embed] });
+            return message.reply(`${DONE_EMOJI} **ɪ ᴄᴀɴ'ᴛ ʀᴇᴍᴏᴠᴇ ᴛʜɪꜱ ʀᴏʟᴇ (ʜɪᴇʀᴀʀᴄʜʏ).**`);
         }
 
         if (!targetMember.roles.cache.has(role.id)) {
-            const embed = epicEmbed({
-                title: 'ℹ️ Role Matrix • Nothing To Extract',
-                color: THEME.COLORS.WARNING,
-                description: `${targetMember} doesn't have ${role}.`,
-                fields: [
-                    { name: 'Target', value: `${targetMember}`, inline: true },
-                    { name: 'Role', value: `${role}`, inline: true },
-                    { name: 'Executor', value: `${message.author}`, inline: true }
-                ],
-                member: targetMember
-            });
-            return message.reply({ embeds: [embed] });
+            return message.reply(`${DONE_EMOJI} **ᴛʜɪꜱ ᴜꜱᴇʀ ᴅᴏᴇꜱɴ'ᴛ ʜᴀᴠᴇ ᴛʜᴀᴛ ʀᴏʟᴇ.**`);
         }
 
         try {
             await targetMember.roles.remove(role, `Prefix role removal by ${message.author.tag}`);
 
-            const embed = epicEmbed({
-                title: '🌘 Role Matrix • Extraction Complete',
-                color: THEME.COLORS.SUCCESS,
-                description: '━━━━━━━━━━━━━━━━━━━━━━━━\n**Operation Result: SUCCESS**\n━━━━━━━━━━━━━━━━━━━━━━━━',
-                fields: [
-                    { name: 'Target', value: `${targetMember}`, inline: true },
-                    { name: 'Extracted Role', value: `${role}`, inline: true },
-                    { name: 'Executor', value: `${message.author}`, inline: true },
-                    { name: 'Query', value: `\`${roleQuery}\``, inline: false }
-                ],
-                member: targetMember
-            });
-
-            return message.reply({ embeds: [embed] });
+            return message.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ.**`);
         } catch (e) {
             console.error('del role command error:', e);
-            const embed = epicEmbed({
-                title: '💥 Role Matrix • Operation Failed',
-                color: THEME.COLORS.ERROR,
-                description: `❌ Failed to remove ${role} from ${targetMember}.\n\nReason: \`${e.message}\``,
-                member: message.member
-            });
-            return message.reply({ embeds: [embed] });
+            return message.reply(`${DONE_EMOJI} **ᴇʀʀᴏʀ.**`);
         }
     }
 };

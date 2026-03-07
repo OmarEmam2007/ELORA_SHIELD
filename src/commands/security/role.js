@@ -1,5 +1,6 @@
-const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
-const THEME = require('../../utils/theme');
+const { PermissionFlagsBits } = require('discord.js');
+
+const DONE_EMOJI = '<:555:1479967165619634348>';
 
 const SMALL_CAPS_MAP = {
     'ᴀ': 'a', 'ʙ': 'b', 'ᴄ': 'c', 'ᴅ': 'd', 'ᴇ': 'e', 'ꜰ': 'f', 'ғ': 'f',
@@ -47,142 +48,53 @@ function findRole(guild, roleQuery) {
     return null;
 }
 
-function epicEmbed({ title, color, description, fields, member, footerIconURL }) {
-    const e = new EmbedBuilder()
-        .setColor(color)
-        .setTitle(title)
-        .setDescription(description)
-        .setFooter({ text: THEME.FOOTER.text, iconURL: footerIconURL || THEME.FOOTER.iconURL })
-        .setTimestamp();
-
-    if (member?.user?.displayAvatarURL) {
-        e.setThumbnail(member.user.displayAvatarURL({ dynamic: true }));
-    }
-
-    if (fields?.length) e.addFields(fields);
-    return e;
-}
-
 module.exports = {
     name: 'role',
-    aliases: ['addrole', 'giverole'],
+    aliases: ['addrole', 'giverole', 'r'],
     async execute(message, client, args) {
-        const noPermEmbed = epicEmbed({
-            title: '🛡️ Sovereign Nexus • Access Denied',
-            color: THEME.COLORS.ERROR,
-            description: '❌ You do not have permission to assign roles.',
-            member: message.member
-        });
-
         if (!message.member?.permissions?.has(PermissionFlagsBits.ManageRoles)) {
-            return message.reply({ embeds: [noPermEmbed] });
+            return message.reply(`${DONE_EMOJI} **ʏᴏᴜ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ʀᴏʟᴇꜱ ᴛᴏ ᴜꜱᴇ ᴛʜɪꜱ.**`);
         }
 
         const targetMember = message.mentions.members.first();
         if (!targetMember) {
-            const embed = epicEmbed({
-                title: '🛰️ Role Matrix • Missing Target',
-                color: THEME.COLORS.WARNING,
-                description: '⚠️ Mention a user first.\n\nExample: `elora role @user astray`',
-                member: message.member
-            });
-            return message.reply({ embeds: [embed] });
+            return message.reply(`${DONE_EMOJI} **ᴜꜱᴀɢᴇ: .ʀ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
         }
 
         const roleQuery = args.slice(1).join(' ').trim();
         if (!roleQuery) {
-            const embed = epicEmbed({
-                title: '🛰️ Role Matrix • Missing Role',
-                color: THEME.COLORS.WARNING,
-                description: '⚠️ Provide a role name (or role mention / role id).\n\nExample: `elora role @user astray`',
-                member: message.member
-            });
-            return message.reply({ embeds: [embed] });
+            return message.reply(`${DONE_EMOJI} **ᴜꜱᴀɢᴇ: .ʀ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
         }
 
         const role = findRole(message.guild, roleQuery);
         if (!role) {
-            const embed = epicEmbed({
-                title: '🌑 Lunar Index • Role Not Found',
-                color: THEME.COLORS.ERROR,
-                description: `❌ I couldn't locate a role matching: **${roleQuery}**\n\nTip: you can also use a role mention like <@&roleId>.`,
-                member: message.member
-            });
-            return message.reply({ embeds: [embed] });
+            return message.reply(`${DONE_EMOJI} **ʀᴏʟᴇ ɴᴏᴛ ꜰᴏᴜɴᴅ.**`);
         }
 
         if (role.managed || role.name === '@everyone') {
-            const embed = epicEmbed({
-                title: '🛡️ Role Matrix • Protected Role',
-                color: THEME.COLORS.ERROR,
-                description: `❌ This role is protected and cannot be assigned: ${role}`,
-                member: message.member
-            });
-            return message.reply({ embeds: [embed] });
+            return message.reply(`${DONE_EMOJI} **ɪ ᴄᴀɴ'ᴛ ɢɪᴠᴇ ᴛʜɪꜱ ʀᴏʟᴇ.**`);
         }
 
         const botMember = message.guild.members.me;
         if (!botMember?.permissions?.has(PermissionFlagsBits.ManageRoles)) {
-            const embed = epicEmbed({
-                title: '⚠️ Role Matrix • Bot Missing Permission',
-                color: THEME.COLORS.ERROR,
-                description: '❌ I need **Manage Roles** permission to do that.',
-                member: message.member
-            });
-            return message.reply({ embeds: [embed] });
+            return message.reply(`${DONE_EMOJI} **ɪ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ʀᴏʟᴇꜱ ᴘᴇʀᴍɪꜱꜱɪᴏɴ.**`);
         }
 
         if (!role.editable || (botMember.roles.highest?.position ?? 0) <= role.position) {
-            const embed = epicEmbed({
-                title: '⛔ Hierarchy Lock',
-                color: THEME.COLORS.ERROR,
-                description: `❌ I can't assign ${role} بسبب ترتيب الرولات (hierarchy).\n\nارفع رول البوت فوق الرول ده.`,
-                member: message.member
-            });
-            return message.reply({ embeds: [embed] });
+            return message.reply(`${DONE_EMOJI} **ɪ ᴄᴀɴ'ᴛ ɢɪᴠᴇ ᴛʜɪꜱ ʀᴏʟᴇ (ʜɪᴇʀᴀʀᴄʜʏ).**`);
         }
 
         if (targetMember.roles.cache.has(role.id)) {
-            const embed = epicEmbed({
-                title: '✅ Role Matrix • Already Synced',
-                color: THEME.COLORS.WARNING,
-                description: `ℹ️ ${targetMember} already has ${role}.`,
-                fields: [
-                    { name: 'Target', value: `${targetMember}`, inline: true },
-                    { name: 'Role', value: `${role}`, inline: true },
-                    { name: 'Executor', value: `${message.author}`, inline: true }
-                ],
-                member: targetMember
-            });
-            return message.reply({ embeds: [embed] });
+            return message.reply(`${DONE_EMOJI} **ᴛʜɪꜱ ᴜꜱᴇʀ ᴀʟʀᴇᴀᴅʏ ʜᴀꜱ ᴛʜᴀᴛ ʀᴏʟᴇ.**`);
         }
 
         try {
             await targetMember.roles.add(role, `Prefix role assignment by ${message.author.tag}`);
 
-            const embed = epicEmbed({
-                title: '🌙 Role Matrix • Synchronization Complete',
-                color: THEME.COLORS.SUCCESS,
-                description: '━━━━━━━━━━━━━━━━━━━━━━━━\n**Operation Result: SUCCESS**\n━━━━━━━━━━━━━━━━━━━━━━━━',
-                fields: [
-                    { name: 'Target', value: `${targetMember}`, inline: true },
-                    { name: 'Injected Role', value: `${role}`, inline: true },
-                    { name: 'Executor', value: `${message.author}`, inline: true },
-                    { name: 'Query', value: `\`${roleQuery}\``, inline: false }
-                ],
-                member: targetMember
-            });
-
-            return message.reply({ embeds: [embed] });
+            return message.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ʀᴏʟᴇ ʜᴀꜱ ʙᴇᴇɴ ɢɪᴠᴇɴ.**`);
         } catch (e) {
             console.error('role command error:', e);
-            const errorEmbed = epicEmbed({
-                title: '💥 Role Matrix • Operation Failed',
-                color: THEME.COLORS.ERROR,
-                description: `❌ Failed to assign ${role} to ${targetMember}.\n\nReason: \`${e.message}\``,
-                member: message.member
-            });
-            return message.reply({ embeds: [errorEmbed] });
+            return message.reply(`${DONE_EMOJI} **ᴇʀʀᴏʀ.**`);
         }
     }
 };

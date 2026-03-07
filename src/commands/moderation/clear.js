@@ -2,6 +2,8 @@ const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('disc
 const THEME = require('../../utils/theme');
 const { buildAssetAttachment } = require('../../utils/responseAssets');
 
+const DONE_EMOJI = '<:555:1479967165619634348>';
+
 module.exports = {
     name: 'clear',
     aliases: ['clear'],
@@ -43,12 +45,10 @@ module.exports = {
             botsOnly = interaction.options.getBoolean('bots');
             contains = interaction.options.getString('contains');
         } else {
-            // Prefix: !clear [Amount] [Optional: @User]
+            // Prefix: .clear [Amount]
             amount = parseInt(commandArgs[0]);
             if (isNaN(amount) || amount < 1 || amount > 100) {
-                return mainMsg.reply({
-                    embeds: [new EmbedBuilder().setColor(THEME.COLORS.ERROR).setDescription(`${THEME.ICONS.CROSS} **Usage:** \`!clear [1-100]\``)]
-                });
+                return mainMsg.reply(`${DONE_EMOJI} **ᴜꜱᴀɢᴇ: .ᴄʟᴇᴀʀ [1-100]**`);
             }
             
             // Basic prefix target detection
@@ -62,23 +62,20 @@ module.exports = {
             }
         }
 
-        // --- 2. Pseudo-Animation (Vaporize) ---
-        const initEmbed = new EmbedBuilder()
-            .setColor(THEME.COLORS.ACCENT)
-            .setDescription('💥 **Preparing Vaporization Beam...**');
-
-        const loadingAsset = buildAssetAttachment('loading');
-        if (loadingAsset?.url) initEmbed.setImage(loadingAsset.url);
-
         let responseMsg;
         if (isSlash) {
+            // --- 2. Pseudo-Animation (Vaporize) ---
+            const initEmbed = new EmbedBuilder()
+                .setColor(THEME.COLORS.ACCENT)
+                .setDescription('💥 **Preparing Vaporization Beam...**');
+
+            const loadingAsset = buildAssetAttachment('loading');
+            if (loadingAsset?.url) initEmbed.setImage(loadingAsset.url);
+
             await mainMsg.reply({ embeds: [initEmbed], files: loadingAsset?.attachment ? [loadingAsset.attachment] : [], ephemeral: true });
             responseMsg = mainMsg;
-        } else {
-            responseMsg = await mainMsg.reply({ embeds: [initEmbed], files: loadingAsset?.attachment ? [loadingAsset.attachment] : [] });
+            await new Promise(r => setTimeout(r, 1000));
         }
-
-        await new Promise(r => setTimeout(r, 1000)); // Charge laser
 
         // --- 3. Execute ---
         try {
@@ -102,28 +99,29 @@ module.exports = {
             // Delete
             await channel.bulkDelete(toDelete, true);
 
-            const successEmbed = new EmbedBuilder()
-                .setColor(THEME.COLORS.SUCCESS)
-                .setDescription(`💥 **Vaporized ${toDelete.size} messages**`)
-                .setTimestamp();
-
-            const okAsset = buildAssetAttachment('ok');
-            if (okAsset?.url) successEmbed.setImage(okAsset.url);
-
             if (isSlash) {
+                const successEmbed = new EmbedBuilder()
+                    .setColor(THEME.COLORS.SUCCESS)
+                    .setDescription(`💥 **Vaporized ${toDelete.size} messages**`)
+                    .setTimestamp();
+
+                const okAsset = buildAssetAttachment('ok');
+                if (okAsset?.url) successEmbed.setImage(okAsset.url);
                 await mainMsg.editReply({ embeds: [successEmbed], files: okAsset?.attachment ? [okAsset.attachment] : [] });
             } else {
-                await responseMsg.edit({ embeds: [successEmbed], files: okAsset?.attachment ? [okAsset.attachment] : [] });
-                setTimeout(() => responseMsg.delete().catch(() => { }), 3000);
+                await mainMsg.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴍᴇꜱꜱᴀɢᴇꜱ ʜᴀᴠᴇ ʙᴇᴇɴ ᴄʟᴇᴀʀᴇᴅ.**`);
             }
 
         } catch (error) {
             console.error(error);
-            const err = new EmbedBuilder().setColor(THEME.COLORS.ERROR).setDescription('❌ **Error:** Messages too old or missing.');
-            const badAsset = buildAssetAttachment('wrong');
-            if (badAsset?.url) err.setImage(badAsset.url);
-            if (isSlash) await mainMsg.editReply({ embeds: [err], files: badAsset?.attachment ? [badAsset.attachment] : [] });
-            else await responseMsg.edit({ embeds: [err], files: badAsset?.attachment ? [badAsset.attachment] : [] });
+            if (isSlash) {
+                const err = new EmbedBuilder().setColor(THEME.COLORS.ERROR).setDescription('❌ **Error:** Messages too old or missing.');
+                const badAsset = buildAssetAttachment('wrong');
+                if (badAsset?.url) err.setImage(badAsset.url);
+                await mainMsg.editReply({ embeds: [err], files: badAsset?.attachment ? [badAsset.attachment] : [] });
+            } else {
+                await mainMsg.reply(`${DONE_EMOJI} **ᴇʀʀᴏʀ.**`);
+            }
         }
     },
 };
