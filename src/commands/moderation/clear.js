@@ -3,6 +3,8 @@ const THEME = require('../../utils/theme');
 const { buildAssetAttachment } = require('../../utils/responseAssets');
 
 module.exports = {
+    name: 'clear',
+    aliases: ['clear'],
     data: new SlashCommandBuilder()
         .setName('clear')
         .setDescription('Vaporizes messages from existence.')

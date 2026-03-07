@@ -3,6 +3,8 @@ const THEME = require('../../utils/theme');
 const { buildAssetAttachment } = require('../../utils/responseAssets');
 
 module.exports = {
+    name: 'kick',
+    aliases: ['k', 'kick', 'برا'],
     data: new SlashCommandBuilder()
         .setName('kick')
         .setDescription('Kicks a user from the server with Lunar authority.')

@@ -3,6 +3,8 @@ const THEME = require('../../utils/theme');
 const { buildAssetAttachment } = require('../../utils/responseAssets');
 
 module.exports = {
+    name: 'ban',
+    aliases: ['ban', 'اديهولوا', 'شد', 'ببتاعي'],
     data: new SlashCommandBuilder()
         .setName('ban')
         .setDescription('Bans a user from the server with Lunar authority.')

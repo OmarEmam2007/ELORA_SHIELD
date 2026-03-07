@@ -3,6 +3,8 @@ const THEME = require('../../utils/theme');
 const { buildAssetAttachment } = require('../../utils/responseAssets');
 
 module.exports = {
+    name: 'timeout',
+    aliases: ['time', 'timeout'],
     data: new SlashCommandBuilder()
         .setName('timeout')
         .setDescription('Temporarily silences a user using Lunar stasis.')
