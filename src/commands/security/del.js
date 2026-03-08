@@ -1,6 +1,7 @@
 const { PermissionFlagsBits } = require('discord.js');
 
 const DONE_EMOJI = '<:555:1479967165619634348>';
+const ERROR_EMOJI = '<:661071whitex:1479988133704761515>';
 
 const SMALL_CAPS_MAP = {
     'ᴀ': 'a', 'ʙ': 'b', 'ᴄ': 'c', 'ᴅ': 'd', 'ᴇ': 'e', 'ꜰ': 'f', 'ғ': 'f',
@@ -53,53 +54,53 @@ module.exports = {
     aliases: ['rem', 'remove'],
     async execute(message, client, args) {
         if (!message.member?.permissions?.has(PermissionFlagsBits.ManageRoles)) {
-            return message.reply(`${DONE_EMOJI} **ʏᴏᴜ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ʀᴏʟᴇꜱ ᴛᴏ ᴜꜱᴇ ᴛʜɪꜱ.**`);
+            return message.channel.send(`${ERROR_EMOJI} **ʏᴏᴜ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ʀᴏʟᴇꜱ ᴛᴏ ᴜꜱᴇ ᴛʜɪꜱ.**`);
         }
 
         const isRoleSubcommand = args[0]?.toLowerCase() === 'role';
         if (!isRoleSubcommand) {
-            return message.reply(`${DONE_EMOJI} **ᴜꜱᴀɢᴇ: ᴇʟᴏʀᴀ ᴅᴇʟ ʀᴏʟᴇ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
+            return message.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: ᴇʟᴏʀᴀ ᴅᴇʟ ʀᴏʟᴇ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
         }
 
         const targetMember = message.mentions.members.first();
         if (!targetMember) {
-            return message.reply(`${DONE_EMOJI} **ᴜꜱᴀɢᴇ: ᴇʟᴏʀᴀ ᴅᴇʟ ʀᴏʟᴇ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
+            return message.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: ᴇʟᴏʀᴀ ᴅᴇʟ ʀᴏʟᴇ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
         }
 
         const roleQuery = args.slice(2).join(' ').trim();
         if (!roleQuery) {
-            return message.reply(`${DONE_EMOJI} **ᴜꜱᴀɢᴇ: ᴇʟᴏʀᴀ ᴅᴇʟ ʀᴏʟᴇ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
+            return message.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: ᴇʟᴏʀᴀ ᴅᴇʟ ʀᴏʟᴇ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
         }
 
         const role = findRole(message.guild, roleQuery);
         if (!role) {
-            return message.reply(`${DONE_EMOJI} **ʀᴏʟᴇ ɴᴏᴛ ꜰᴏᴜɴᴅ.**`);
+            return message.channel.send(`${ERROR_EMOJI} **ʀᴏʟᴇ ɴᴏᴛ ꜰᴏᴜɴᴅ.**`);
         }
 
         if (role.managed || role.name === '@everyone') {
-            return message.reply(`${DONE_EMOJI} **ɪ ᴄᴀɴ'ᴛ ʀᴇᴍᴏᴠᴇ ᴛʜɪꜱ ʀᴏʟᴇ.**`);
+            return message.channel.send(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ʀᴇᴍᴏᴠᴇ ᴛʜɪꜱ ʀᴏʟᴇ.**`);
         }
 
         const botMember = message.guild.members.me;
         if (!botMember?.permissions?.has(PermissionFlagsBits.ManageRoles)) {
-            return message.reply(`${DONE_EMOJI} **ɪ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ʀᴏʟᴇꜱ ᴘᴇʀᴍɪꜱꜱɪᴏɴ.**`);
+            return message.channel.send(`${ERROR_EMOJI} **ɪ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ʀᴏʟᴇꜱ ᴘᴇʀᴍɪꜱꜱɪᴏɴ.**`);
         }
 
         if (!role.editable || (botMember.roles.highest?.position ?? 0) <= role.position) {
-            return message.reply(`${DONE_EMOJI} **ɪ ᴄᴀɴ'ᴛ ʀᴇᴍᴏᴠᴇ ᴛʜɪꜱ ʀᴏʟᴇ (ʜɪᴇʀᴀʀᴄʜʏ).**`);
+            return message.channel.send(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ʀᴇᴍᴏᴠᴇ ᴛʜɪꜱ ʀᴏʟᴇ (ʜɪᴇʀᴀʀᴄʜʏ).**`);
         }
 
         if (!targetMember.roles.cache.has(role.id)) {
-            return message.reply(`${DONE_EMOJI} **ᴛʜɪꜱ ᴜꜱᴇʀ ᴅᴏᴇꜱɴ'ᴛ ʜᴀᴠᴇ ᴛʜᴀᴛ ʀᴏʟᴇ.**`);
+            return message.channel.send(`${ERROR_EMOJI} **ᴛʜɪꜱ ᴜꜱᴇʀ ᴅᴏᴇꜱɴ'ᴛ ʜᴀᴠᴇ ᴛʜᴀᴛ ʀᴏʟᴇ.**`);
         }
 
         try {
             await targetMember.roles.remove(role, `Prefix role removal by ${message.author.tag}`);
 
-            return message.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ.**`);
+            return message.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ.**`);
         } catch (e) {
             console.error('del role command error:', e);
-            return message.reply(`${DONE_EMOJI} **ᴇʀʀᴏʀ.**`);
+            return message.channel.send(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);
         }
     }
 };

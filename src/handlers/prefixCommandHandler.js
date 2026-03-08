@@ -48,31 +48,12 @@ async function handlePrefixCommand(message, client) {
 
     const PREFIX_DEBUG = process.env.PREFIX_DEBUG === '1';
 
-    // Main prefix style: "elora <command> ..."
-    const eloraPrefixMatch = text.match(/^elora\s+(.+)/i);
-    const legacyPrefix = client?.config?.prefix ? String(client.config.prefix) : null;
-    const bangPrefix = '!';
     const dotPrefix = '.';
 
     let args = [];
     let commandName = null;
 
-    if (eloraPrefixMatch) {
-        args = eloraPrefixMatch[1].trim().split(/\s+/).filter(Boolean);
-        commandName = String(args.shift() || '').toLowerCase();
-    } else if (legacyPrefix && text.startsWith(legacyPrefix)) {
-        const content = text.slice(legacyPrefix.length).trim();
-        if (content) {
-            args = content.split(/\s+/).filter(Boolean);
-            commandName = String(args.shift() || '').toLowerCase();
-        }
-    } else if (text.startsWith(bangPrefix)) {
-        const content = text.slice(bangPrefix.length).trim();
-        if (content) {
-            args = content.split(/\s+/).filter(Boolean);
-            commandName = String(args.shift() || '').toLowerCase();
-        }
-    } else if (text.startsWith(dotPrefix)) {
+    if (text.startsWith(dotPrefix)) {
         const content = text.slice(dotPrefix.length).trim();
         if (content) {
             args = content.split(/\s+/).filter(Boolean);
@@ -82,22 +63,7 @@ async function handlePrefixCommand(message, client) {
 
     if (!commandName) return;
 
-    // Built-in minimal healthcheck command (does not depend on external command modules)
-    if (commandName === 'ping' || commandName === 'p') {
-        try {
-            return await message.reply('pong 🏓');
-        } catch (_) {
-            return;
-        }
-    }
-
-    if (commandName === 'debug') {
-        try {
-            return await message.reply(`✅ **Prefix Handler Active**\n- Bot: ${client.user.tag}\n- Commands Loaded: ${client.prefixCommands.size}`);
-        } catch (_) {
-            return;
-        }
-    }
+    // No built-in reply commands here. Prefix commands must be module-driven.
 
     const cmd = client.prefixCommands?.get(commandName);
     if (!cmd || typeof cmd.execute !== 'function') {

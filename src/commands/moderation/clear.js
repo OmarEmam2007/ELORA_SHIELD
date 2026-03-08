@@ -49,7 +49,7 @@ module.exports = {
             // Prefix: .clear [Amount]
             amount = parseInt(commandArgs[0]);
             if (isNaN(amount) || amount < 1 || amount > 100) {
-                return mainMsg.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴄʟᴇᴀʀ [1-100]**`);
+                return mainMsg.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴄʟᴇᴀʀ [1-100]**`);
             }
             
             // Basic prefix target detection

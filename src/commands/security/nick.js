@@ -1,23 +1,26 @@
 const { PermissionFlagsBits } = require('discord.js');
 const NicknameLock = require('../../models/NicknameLock');
 
+const DONE_EMOJI = '<:555:1479967165619634348>';
+const ERROR_EMOJI = '<:661071whitex:1479988133704761515>';
+
 module.exports = {
     name: 'nick',
     async execute(message, client, args) {
         if (!message.guild) return;
 
         if (!message.member.permissions.has(PermissionFlagsBits.ManageNicknames)) {
-            return message.reply('❌ You need **Manage Nicknames** permission to use this.');
+            return message.channel.send(`${ERROR_EMOJI} **ʏᴏᴜ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ɴɪᴄᴋɴᴀᴍᴇꜱ ᴛᴏ ᴜꜱᴇ ᴛʜɪꜱ.**`);
         }
 
         const me = message.guild.members.me || (await message.guild.members.fetchMe().catch(() => null));
         if (!me?.permissions.has(PermissionFlagsBits.ManageNicknames)) {
-            return message.reply('❌ I need **Manage Nicknames** permission.');
+            return message.channel.send(`${ERROR_EMOJI} **ɪ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ɴɪᴄᴋɴᴀᴍᴇꜱ ᴘᴇʀᴍɪꜱꜱɪᴏɴ.**`);
         }
 
         const target = message.mentions.members.first();
         if (!target) {
-            return message.reply('❌ Usage: `elora nick @member NewNickname` أو `elora nick @member reset`');
+            return message.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ɴɪᴄᴋ @ᴍᴇᴍʙᴇʀ [ɴᴇᴡ_ɴɪᴄᴋɴᴀᴍᴇ] | .ɴɪᴄᴋ @ᴍᴇᴍʙᴇʀ ʀᴇꜱᴇᴛ**`);
         }
 
         const OWNER_ROLE_ID = '1461766723274412126';
@@ -28,7 +31,7 @@ module.exports = {
         if (target.id === message.author.id && !isOwner) {
             const lock = await NicknameLock.findOne({ guildId: message.guild.id, userId: target.id, locked: true }).catch(() => null);
             if (lock) {
-                return message.reply('❌ This nickname is locked by the Owner. You can’t change it.');
+                return message.channel.send(`${ERROR_EMOJI} **ᴛʜɪꜱ ɴɪᴄᴋɴᴀᴍᴇ ɪꜱ ʟᴏᴄᴋᴇᴅ.**`);
             }
         }
 
@@ -36,7 +39,7 @@ module.exports = {
         const nickname = args.slice(Math.max(mentionIndex, 0) + 1).join(' ').trim();
 
         if (!nickname) {
-            return message.reply('❌ Please provide a nickname. مثال: `elora nick @member mr.x` أو `elora nick @member reset`');
+            return message.channel.send(`${ERROR_EMOJI} **ᴘʟᴇᴀꜱᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ɴɪᴄᴋɴᴀᴍᴇ.**`);
         }
 
         const lowered = nickname.toLowerCase();
@@ -46,14 +49,14 @@ module.exports = {
             try {
                 await target.setNickname(null);
                 await NicknameLock.findOneAndDelete({ guildId: message.guild.id, userId: target.id }).catch(() => { });
-                return message.reply(`✅ Nickname cleared for **${target.user.username}**`);
+                return message.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ɴɪᴄᴋɴᴀᴍᴇ ᴄʟᴇᴀʀᴇᴅ.**`);
             } catch (e) {
-                return message.reply('❌ I cannot change this user nickname (role hierarchy / missing permission).');
+                return message.channel.send(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ᴄʜᴀɴɢᴇ ᴛʜɪꜱ ɴɪᴄᴋɴᴀᴍᴇ.**`);
             }
         }
 
         if (nickname.length > 32) {
-            return message.reply('❌ Nickname is too long (max 32).');
+            return message.channel.send(`${ERROR_EMOJI} **ɴɪᴄᴋɴᴀᴍᴇ ɪꜱ ᴛᴏᴏ ʟᴏɴɢ (ᴍᴀx 32).**`);
         }
 
         try {
@@ -66,9 +69,9 @@ module.exports = {
                 },
                 { upsert: true, new: true }
             ).catch(() => { });
-            return message.reply(`✅ Nickname updated for **${target.user.username}** to **${nickname}**`);
+            return message.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ɴɪᴄᴋɴᴀᴍᴇ ᴜᴘᴅᴀᴛᴇᴅ.**`);
         } catch (e) {
-            return message.reply('❌ I cannot change this user nickname (role hierarchy / missing permission).');
+            return message.channel.send(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ᴄʜᴀɴɢᴇ ᴛʜɪꜱ ɴɪᴄᴋɴᴀᴍᴇ.**`);
         }
     },
 };

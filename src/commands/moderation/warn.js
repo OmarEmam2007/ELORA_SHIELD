@@ -48,13 +48,13 @@ module.exports = {
 
         if (!isSlash) {
             // Check if it's a server message
-            if (!mainMsg.guild) return mainMsg.reply({ content: 'This command can only be used in a server.' });
+            if (!mainMsg.guild) return mainMsg.channel.send('This command can only be used in a server.');
 
             // Since warn has subcommands, prefix needs to handle them manually
             const sub = commandArgs[0]?.toLowerCase();
             if (sub === 'list') {
                 const targetId = commandArgs[1]?.replace(/[<@!>]/g, '');
-                if (!targetId) return mainMsg.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴡᴀʀɴ ʟɪꜱᴛ @ᴜꜱᴇʀ**`);
+                if (!targetId) return mainMsg.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴡᴀʀɴ ʟɪꜱᴛ @ᴜꜱᴇʀ**`);
                 
                 try {
                     const target = await bot.users.fetch(targetId);
@@ -67,28 +67,28 @@ module.exports = {
                         ? warns.map((w, i) => `**${i + 1}.** <t:${Math.floor(new Date(w.createdAt).getTime() / 1000)}:R> — ${w.reason} (by <@${w.moderatorId}>)`).join('\n')
                         : 'No warnings found.';
 
-                    return mainMsg.reply(`${DONE_EMOJI} **ᴡᴀʀɴɪɴɢꜱ ꜰᴏʀ ${target.tag}:**\n${desc}`);
+                    return mainMsg.channel.send(`${DONE_EMOJI} **ᴡᴀʀɴɪɴɢꜱ ꜰᴏʀ ${target.tag}:**\n${desc}`);
                 } catch (e) {
-                    return mainMsg.reply(`${ERROR_EMOJI} **ɪɴᴠᴀʟɪᴅ ᴜꜱᴇʀ.**`);
+                    return mainMsg.channel.send(`${ERROR_EMOJI} **ɪɴᴠᴀʟɪᴅ ᴜꜱᴇʀ.**`);
                 }
             } else if (sub === 'clear') {
                 const targetId = commandArgs[1]?.replace(/[<@!>]/g, '');
-                if (!targetId) return mainMsg.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴡᴀʀɴ ᴄʟᴇᴀʀ @ᴜꜱᴇʀ**`);
+                if (!targetId) return mainMsg.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴡᴀʀɴ ᴄʟᴇᴀʀ @ᴜꜱᴇʀ**`);
                 
                 try {
                     const target = await bot.users.fetch(targetId);
                     const res = await WarnCase.deleteMany({ guildId: mainMsg.guild.id, userId: target.id }).catch(() => null);
                     const deleted = res?.deletedCount || 0;
-                    return mainMsg.reply(`${DONE_EMOJI} **ᴄʟᴇᴀʀᴇᴅ ${deleted} ᴡᴀʀɴɪɴɢ(s) ꜰᴏʀ ${target.tag}.**`);
+                    return mainMsg.channel.send(`${DONE_EMOJI} **ᴄʟᴇᴀʀᴇᴅ ${deleted} ᴡᴀʀɴɪɴɢ(s) ꜰᴏʀ ${target.tag}.**`);
                 } catch (e) {
-                    return mainMsg.reply(`${ERROR_EMOJI} **ɪɴᴠᴀʟɪᴅ ᴜꜱᴇʀ.**`);
+                    return mainMsg.channel.send(`${ERROR_EMOJI} **ɪɴᴠᴀʟɪᴅ ᴜꜱᴇʀ.**`);
                 }
             } else {
                 // Default to 'add'
                 const targetId = commandArgs[0]?.replace(/[<@!>]/g, '');
                 const reason = commandArgs.slice(1).join(' ') || 'General Warning';
                 
-                if (!targetId) return mainMsg.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴡᴀʀɴ @ᴜꜱᴇʀ [ʀᴇᴀꜱᴏɴ]**`);
+                if (!targetId) return mainMsg.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴡᴀʀɴ @ᴜꜱᴇʀ [ʀᴇᴀꜱᴏɴ]**`);
                 
                 try {
                     const targetUser = await bot.users.fetch(targetId);
@@ -117,10 +117,10 @@ module.exports = {
                         }
                     }
 
-                    return mainMsg.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴜꜱᴇʀ ʜᴀꜱ ʙᴇᴇɴ ᴡᴀʀɴᴇᴅ.**`);
+                    return mainMsg.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴜꜱᴇʀ ʜᴀꜱ ʙᴇᴇɴ ᴡᴀʀɴᴇᴅ.**`);
                 } catch (e) {
                     console.error(e);
-                    return mainMsg.reply(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);
+                    return mainMsg.channel.send(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);
                 }
             }
         }

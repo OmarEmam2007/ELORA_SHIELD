@@ -40,13 +40,13 @@ module.exports = {
             // Prefix: .k @User [Reason]
             const targetId = commandArgs[0]?.replace(/[<@!>]/g, '');
             if (!targetId) {
-                return mainMsg.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴋ @ᴜꜱᴇʀ [ʀᴇᴀꜱᴏɴ]**`);
+                return mainMsg.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴋ @ᴜꜱᴇʀ [ʀᴇᴀꜱᴏɴ]**`);
             }
 
             try {
                 targetUser = await bot.users.fetch(targetId);
             } catch (e) {
-                return mainMsg.reply(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ.**`);
+                return mainMsg.channel.send(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ.**`);
             }
 
             reason = commandArgs.slice(1).join(' ') || 'Minor Infraction';
@@ -55,7 +55,7 @@ module.exports = {
         const member = await mainMsg.guild.members.fetch(targetUser.id).catch(() => null);
 
         if (!member) {
-            return mainMsg.reply(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɪꜱ ɴᴏᴛ ɪɴ ᴛʜɪꜱ ꜱᴇʀᴠᴇʀ.**`);
+            return mainMsg.channel.send(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɪꜱ ɴᴏᴛ ɪɴ ᴛʜɪꜱ ꜱᴇʀᴠᴇʀ.**`);
         }
 
         const SPECIAL_EXECUTOR_ID = '1380794290350981130';
@@ -64,7 +64,7 @@ module.exports = {
             if (isSlash) {
                 return interaction.reply({ content: "AhMeD_kErA has complete control now, i can't kick him." });
             }
-            return mainMsg.reply(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ᴋɪᴄᴋ ᴛʜɪꜱ ᴜꜱᴇʀ.**`);
+            return mainMsg.channel.send(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ᴋɪᴄᴋ ᴛʜɪꜱ ᴜꜱᴇʀ.**`);
         }
 
         if (!member.kickable) {
@@ -76,7 +76,7 @@ module.exports = {
                 if (badAsset?.url) err.setImage(badAsset.url);
                 return interaction.reply({ embeds: [err], files: badAsset?.attachment ? [badAsset.attachment] : [], ephemeral: true });
             }
-            return mainMsg.reply(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ᴋɪᴄᴋ ᴛʜɪꜱ ᴜꜱᴇʀ.**`);
+            return mainMsg.channel.send(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ᴋɪᴄᴋ ᴛʜɪꜱ ᴜꜱᴇʀ.**`);
         }
 
         // --- 2. Pseudo-Animation ---
@@ -105,7 +105,15 @@ module.exports = {
 
         // --- 3. Execution ---
         try {
-            await targetUser.send(`👢 **Kicked from ${mainMsg.guild.name}**\nReason: ${reason}`).catch(() => { });
+            // DM (prefix must never send embeds; slash can keep its own style)
+            if (isSlash) {
+                await targetUser.send(`👢 **Kicked from ${mainMsg.guild.name}**\nReason: ${reason}`).catch(() => { });
+            } else {
+                await targetUser.send(
+                    `${DONE_EMOJI} **ʏᴏᴜ ʜᴀᴠᴇ ʙᴇᴇɴ ᴋɪᴄᴋᴇᴅ ꜰʀᴏᴍ ${String(mainMsg.guild.name || '').toUpperCase()}.**\n` +
+                    `${DONE_EMOJI} **ʀᴇᴀꜱᴏɴ: ${reason}**`
+                ).catch(() => { });
+            }
 
             await member.kick(reason);
 
@@ -128,7 +136,7 @@ module.exports = {
                 if (okAsset?.url) successEmbed.setImage(okAsset.url);
                 await mainMsg.editReply({ embeds: [successEmbed], files: okAsset?.attachment ? [okAsset.attachment] : [] });
             } else {
-                await mainMsg.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴜꜱᴇʀ ʜᴀꜱ ʙᴇᴇɴ ᴋɪᴄᴋᴇᴅ.**`);
+                await mainMsg.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴜꜱᴇʀ ʜᴀꜱ ʙᴇᴇɴ ᴋɪᴄᴋᴇᴅ.**`);
             }
 
         } catch (error) {
@@ -142,7 +150,7 @@ module.exports = {
                 if (badAsset?.url) errEmbed.setImage(badAsset.url);
                 await mainMsg.editReply({ embeds: [errEmbed], files: badAsset?.attachment ? [badAsset.attachment] : [] });
             } else {
-                await mainMsg.reply(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);
+                await mainMsg.channel.send(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);
             }
         }
     },

@@ -42,22 +42,22 @@ module.exports = {
             // Prefix: .time @User [Minutes] [Reason]
             const targetId = commandArgs[0]?.replace(/[<@!>]/g, '');
             if (!targetId || !commandArgs[1]) {
-                return interaction.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴛɪᴍᴇ @ᴜꜱᴇʀ [ᴍɪɴᴜᴛᴇꜱ] [ʀᴇᴀꜱᴏɴ]**`);
+                return interaction.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴛɪᴍᴇ @ᴜꜱᴇʀ [ᴍɪɴᴜᴛᴇꜱ] [ʀᴇᴀꜱᴏɴ]**`);
             }
             try {
                 targetUser = await bot.users.fetch(targetId);
             } catch (error) {
-                return interaction.reply(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ.**`);
+                return interaction.channel.send(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ.**`);
             }
 
             duration = parseInt(commandArgs[1]);
-            if (isNaN(duration)) return interaction.reply(`${ERROR_EMOJI} **ɪɴᴠᴀʟɪᴅ ᴅᴜʀᴀᴛɪᴏɴ.**`);
+            if (isNaN(duration)) return interaction.channel.send(`${ERROR_EMOJI} **ɪɴᴠᴀʟɪᴅ ᴅᴜʀᴀᴛɪᴏɴ.**`);
             reason = commandArgs.slice(2).join(' ') || 'Temporal Stasis Protocol';
         }
 
         const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
         if (!member) {
-            return interaction.reply(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɪꜱ ɴᴏᴛ ɪɴ ᴛʜɪꜱ ꜱᴇʀᴠᴇʀ.**`);
+            return interaction.channel.send(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɪꜱ ɴᴏᴛ ɪɴ ᴛʜɪꜱ ꜱᴇʀᴠᴇʀ.**`);
         }
 
         const SPECIAL_EXECUTOR_ID = '1380794290350981130';
@@ -73,7 +73,7 @@ module.exports = {
                 if (badAsset?.url) err.setImage(badAsset.url);
                 return interaction.reply({ embeds: [err], files: badAsset?.attachment ? [badAsset.attachment] : [], ephemeral: true });
             }
-            return interaction.reply(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ᴛɪᴍᴇᴏᴜᴛ ᴛʜɪꜱ ᴜꜱᴇʀ.**`);
+            return interaction.channel.send(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ᴛɪᴍᴇᴏᴜᴛ ᴛʜɪꜱ ᴜꜱᴇʀ.**`);
         }
 
         // --- 2. Animation (slash only) ---
@@ -102,12 +102,21 @@ module.exports = {
         try {
             await member.timeout(duration * 60 * 1000, reason);
 
-            const dmEmbed = new EmbedBuilder()
-                .setColor(THEME.COLORS.WARNING)
-                .setTitle(`🔇 Silenced in ${interaction.guild.name}`)
-                .setDescription(`You remain in stasis for **${duration} minutes**.\nReason: ${reason}`)
-                .setTimestamp();
-            await targetUser.send({ embeds: [dmEmbed] }).catch(() => { });
+            // DM (prefix must never send embeds)
+            if (isSlash) {
+                const dmEmbed = new EmbedBuilder()
+                    .setColor(THEME.COLORS.WARNING)
+                    .setTitle(`🔇 Silenced in ${interaction.guild.name}`)
+                    .setDescription(`You remain in stasis for **${duration} minutes**.\nReason: ${reason}`)
+                    .setTimestamp();
+                await targetUser.send({ embeds: [dmEmbed] }).catch(() => { });
+            } else {
+                await targetUser.send(
+                    `${DONE_EMOJI} **ʏᴏᴜ ʜᴀᴠᴇ ʙᴇᴇɴ ᴛɪᴍᴇᴅ ᴏᴜᴛ ɪɴ ${String(interaction.guild.name || '').toUpperCase()}.**\n` +
+                    `${DONE_EMOJI} **ᴅᴜʀᴀᴛɪᴏɴ: ${duration} ᴍɪɴᴜᴛᴇꜱ**\n` +
+                    `${DONE_EMOJI} **ʀᴇᴀꜱᴏɴ: ${reason}**`
+                ).catch(() => { });
+            }
 
             const successEmbed = new EmbedBuilder()
                 .setColor(THEME.COLORS.ACCENT)
@@ -130,7 +139,7 @@ module.exports = {
             if (isSlash) {
                 await interaction.editReply({ embeds: [successEmbed], files: okAsset?.attachment ? [okAsset.attachment] : [] });
             } else {
-                await interaction.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴜꜱᴇʀ ʜᴀꜱ ʙᴇᴇɴ ᴛɪᴍᴇᴅ ᴏᴜᴛ.**`);
+                await interaction.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴜꜱᴇʀ ʜᴀꜱ ʙᴇᴇɴ ᴛɪᴍᴇᴅ ᴏᴜᴛ.**`);
             }
 
         } catch (error) {
@@ -141,7 +150,7 @@ module.exports = {
                 if (badAsset?.url) err.setImage(badAsset.url);
                 await interaction.editReply({ embeds: [err], files: badAsset?.attachment ? [badAsset.attachment] : [] });
             } else {
-                await interaction.reply(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);
+                await interaction.channel.send(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);
             }
         }
     },

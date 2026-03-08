@@ -43,13 +43,13 @@ module.exports = {
             // Prefix: .ban @User [Reason]
             const targetId = commandArgs[0]?.replace(/[<@!>]/g, '');
             if (!targetId) {
-                return interaction.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ʙᴀɴ @ᴜꜱᴇʀ [ʀᴇᴀꜱᴏɴ]**`);
+                return interaction.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ʙᴀɴ @ᴜꜱᴇʀ [ʀᴇᴀꜱᴏɴ]**`);
             }
 
             try {
                 targetUser = await bot.users.fetch(targetId);
             } catch (e) {
-                return interaction.reply(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ.**`);
+                return interaction.channel.send(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ.**`);
             }
 
             reason = commandArgs.slice(1).join(' ') || 'Violation of Lunar Protocols';
@@ -70,7 +70,7 @@ module.exports = {
                     if (badAsset?.url) err.setImage(badAsset.url);
                     return interaction.reply({ embeds: [err], files: badAsset?.attachment ? [badAsset.attachment] : [], ephemeral: true });
                 }
-                return interaction.reply(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ʙᴀɴ ᴛʜɪꜱ ᴜꜱᴇʀ.**`);
+                return interaction.channel.send(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ʙᴀɴ ᴛʜɪꜱ ᴜꜱᴇʀ.**`);
             }
         }
 
@@ -98,15 +98,21 @@ module.exports = {
 
         // --- 3. Execution ---
         try {
-            // DM
-            const dmEmbed = new EmbedBuilder()
-                .setColor(THEME.COLORS.ERROR)
-                .setThumbnail(THEME.ICONS.MOON_FULL)
-                .setTitle(`💥 Ejected from ${interaction.guild.name}`)
-                .setDescription(`You have been exiled to the dark side of the moon.\n\n**Reason:** ${reason}`)
-                .setTimestamp();
-
-            await targetUser.send({ embeds: [dmEmbed] }).catch(() => { });
+            // DM (prefix must never send embeds)
+            if (isSlash) {
+                const dmEmbed = new EmbedBuilder()
+                    .setColor(THEME.COLORS.ERROR)
+                    .setThumbnail(THEME.ICONS.MOON_FULL)
+                    .setTitle(`💥 Ejected from ${interaction.guild.name}`)
+                    .setDescription(`You have been exiled to the dark side of the moon.\n\n**Reason:** ${reason}`)
+                    .setTimestamp();
+                await targetUser.send({ embeds: [dmEmbed] }).catch(() => { });
+            } else {
+                await targetUser.send(
+                    `${DONE_EMOJI} **ʏᴏᴜ ʜᴀᴠᴇ ʙᴇᴇɴ ʙᴀɴɴᴇᴅ ꜰʀᴏᴍ ${String(interaction.guild.name || '').toUpperCase()}.**\n` +
+                    `${DONE_EMOJI} **ʀᴇᴀꜱᴏɴ: ${reason}**`
+                ).catch(() => { });
+            }
 
             await interaction.guild.members.ban(targetUser, {
                 reason: reason,
@@ -135,7 +141,7 @@ module.exports = {
             if (isSlash) {
                 await interaction.editReply({ embeds: [successEmbed], files: okAsset?.attachment ? [okAsset.attachment] : [] });
             } else {
-                await interaction.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴜꜱᴇʀ ʜᴀꜱ ʙᴇᴇɴ ʙᴀɴɴᴇᴅ.**`);
+                await interaction.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴜꜱᴇʀ ʜᴀꜱ ʙᴇᴇɴ ʙᴀɴɴᴇᴅ.**`);
             }
 
         } catch (error) {
@@ -149,7 +155,7 @@ module.exports = {
                 if (badAsset?.url) errEmbed.setImage(badAsset.url);
                 await interaction.editReply({ embeds: [errEmbed], files: badAsset?.attachment ? [badAsset.attachment] : [] });
             } else {
-                await interaction.reply(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);
+                await interaction.channel.send(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);
             }
         }
     },

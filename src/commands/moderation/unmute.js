@@ -11,34 +11,34 @@ module.exports = {
         if (!message.guild) return;
 
         if (!message.member?.permissions?.has(PermissionFlagsBits.ManageRoles)) {
-            return message.reply(`${DONE_EMOJI} **ʏᴏᴜ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ʀᴏʟᴇꜱ ᴛᴏ ᴜꜱᴇ ᴛʜɪꜱ.**`);
+            return message.channel.send(`${ERROR_EMOJI} **ʏᴏᴜ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ʀᴏʟᴇꜱ ᴛᴏ ᴜꜱᴇ ᴛʜɪꜱ.**`);
         }
 
         const me = message.guild.members.me || (await message.guild.members.fetchMe().catch(() => null));
         if (!me?.permissions?.has(PermissionFlagsBits.ManageRoles)) {
-            return message.reply(`${DONE_EMOJI} **ɪ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ʀᴏʟᴇꜱ ᴘᴇʀᴍɪꜱꜱɪᴏɴ.**`);
+            return message.channel.send(`${ERROR_EMOJI} **ɪ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ʀᴏʟᴇꜱ ᴘᴇʀᴍɪꜱꜱɪᴏɴ.**`);
         }
 
         const target = message.mentions.members.first();
         if (!target) {
-            return message.reply(`${DONE_EMOJI} **ᴜꜱᴀɢᴇ: .ᴜɴᴍᴜᴛᴇ @ᴜꜱᴇʀ**`);
+            return message.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴜɴᴍᴜᴛᴇ @ᴜꜱᴇʀ**`);
         }
 
         const mutedRole = message.guild.roles.cache.find(r => r && r.name === MUTED_ROLE_NAME) || null;
         if (!mutedRole) {
-            return message.reply(`${DONE_EMOJI} **ɴᴏ ᴍᴜᴛᴇ ʀᴏʟᴇ ꜰᴏᴜɴᴅ.**`);
+            return message.channel.send(`${ERROR_EMOJI} **ɴᴏ ᴍᴜᴛᴇ ʀᴏʟᴇ ꜰᴏᴜɴᴅ.**`);
         }
 
         if (!target.roles.cache.has(mutedRole.id)) {
-            return message.reply(`${DONE_EMOJI} **ᴛʜɪꜱ ᴜꜱᴇʀ ɪꜱ ɴᴏᴛ ᴍᴜᴛᴇᴅ.**`);
+            return message.channel.send(`${ERROR_EMOJI} **ᴛʜɪꜱ ᴜꜱᴇʀ ɪꜱ ɴᴏᴛ ᴍᴜᴛᴇᴅ.**`);
         }
 
         try {
             await target.roles.remove(mutedRole, `Unmuted by ${message.author.tag}`);
-            return message.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴜꜱᴇʀ ʜᴀꜱ ʙᴇᴇɴ ᴜɴᴍᴜᴛᴇᴅ.**`);
+            return message.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴜꜱᴇʀ ʜᴀꜱ ʙᴇᴇɴ ᴜɴᴍᴜᴛᴇᴅ.**`);
         } catch (e) {
             console.error('[UNMUTE] error:', e);
-            return message.reply(`${DONE_EMOJI} **ᴇʀʀᴏʀ.**`);
+            return message.channel.send(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);
         }
     }
 };

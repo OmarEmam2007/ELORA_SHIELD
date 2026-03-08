@@ -1,6 +1,7 @@
 const { PermissionFlagsBits, ChannelType } = require('discord.js');
 
 const DONE_EMOJI = '<:555:1479967165619634348>';
+const ERROR_EMOJI = '<:661071whitex:1479988133704761515>';
 const MUTED_ROLE_NAME = 'ᴍᴜᴛᴇᴅ';
 
 async function ensureMutedRole(guild) {
@@ -79,22 +80,22 @@ module.exports = {
         if (!message.guild) return;
 
         if (!message.member?.permissions?.has(PermissionFlagsBits.ManageRoles)) {
-            return message.reply(`${DONE_EMOJI} **ʏᴏᴜ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ʀᴏʟᴇꜱ ᴛᴏ ᴜꜱᴇ ᴛʜɪꜱ.**`);
+            return message.channel.send(`${ERROR_EMOJI} **ʏᴏᴜ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ʀᴏʟᴇꜱ ᴛᴏ ᴜꜱᴇ ᴛʜɪꜱ.**`);
         }
 
         const me = message.guild.members.me || (await message.guild.members.fetchMe().catch(() => null));
         if (!me?.permissions?.has(PermissionFlagsBits.ManageRoles)) {
-            return message.reply(`${DONE_EMOJI} **ɪ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ʀᴏʟᴇꜱ ᴘᴇʀᴍɪꜱꜱɪᴏɴ.**`);
+            return message.channel.send(`${ERROR_EMOJI} **ɪ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ʀᴏʟᴇꜱ ᴘᴇʀᴍɪꜱꜱɪᴏɴ.**`);
         }
 
         const target = message.mentions.members.first();
         if (!target) {
-            return message.reply(`${DONE_EMOJI} **ᴜꜱᴀɢᴇ: .ᴍ @ᴜꜱᴇʀ**`);
+            return message.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴍ @ᴜꜱᴇʀ**`);
         }
 
         // Role hierarchy safety
         if ((me.roles.highest?.position ?? 0) <= (target.roles.highest?.position ?? 0)) {
-            return message.reply(`${DONE_EMOJI} **ɪ ᴄᴀɴ'ᴛ ᴍᴜᴛᴇ ᴛʜɪꜱ ᴜꜱᴇʀ (ʜɪɢʜᴇʀ ʀᴏʟᴇ).**`);
+            return message.channel.send(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ᴍᴜᴛᴇ ᴛʜɪꜱ ᴜꜱᴇʀ (ʜɪɢʜᴇʀ ʀᴏʟᴇ).**`);
         }
 
         try {
@@ -104,14 +105,14 @@ module.exports = {
             await applyMutedOverwrites(message.guild, mutedRole, `Mute role overwrites set by ${message.author.tag}`);
 
             if (target.roles.cache.has(mutedRole.id)) {
-                return message.reply(`${DONE_EMOJI} **ᴛʜɪꜱ ᴜꜱᴇʀ ɪꜱ ᴀʟʀᴇᴀᴅʏ ᴍᴜᴛᴇᴅ.**`);
+                return message.channel.send(`${ERROR_EMOJI} **ᴛʜɪꜱ ᴜꜱᴇʀ ɪꜱ ᴀʟʀᴇᴀᴅʏ ᴍᴜᴛᴇᴅ.**`);
             }
 
             await target.roles.add(mutedRole, `Muted by ${message.author.tag}`);
-            return message.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴜꜱᴇʀ ʜᴀꜱ ʙᴇᴇɴ ᴍᴜᴛᴇᴅ.**`);
+            return message.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴜꜱᴇʀ ʜᴀꜱ ʙᴇᴇɴ ᴍᴜᴛᴇᴅ.**`);
         } catch (e) {
             console.error('[MUTE] error:', e);
-            return message.reply(`${DONE_EMOJI} **ᴇʀʀᴏʀ.**`);
+            return message.channel.send(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);
         }
     }
 };

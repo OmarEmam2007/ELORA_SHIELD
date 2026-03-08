@@ -10,12 +10,12 @@ module.exports = {
         if (!message.guild) return;
 
         if (!message.member.permissions.has(PermissionFlagsBits.ManageChannels)) {
-            return message.reply(`${ERROR_EMOJI} **ʏᴏᴜ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ᴄʜᴀɴɴᴇʟꜱ ᴛᴏ ᴜꜱᴇ ᴛʜɪꜱ.**`);
+            return message.channel.send(`${ERROR_EMOJI} **ʏᴏᴜ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ᴄʜᴀɴɴᴇʟꜱ ᴛᴏ ᴜꜱᴇ ᴛʜɪꜱ.**`);
         }
 
         const me = message.guild.members.me || (await message.guild.members.fetchMe().catch(() => null));
         if (!me?.permissions.has(PermissionFlagsBits.ManageChannels)) {
-            return message.reply(`${ERROR_EMOJI} **ɪ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ᴄʜᴀɴɴᴇʟꜱ ᴘᴇʀᴍɪꜱꜱɪᴏɴ.**`);
+            return message.channel.send(`${ERROR_EMOJI} **ɪ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ᴄʜᴀɴɴᴇʟꜱ ᴘᴇʀᴍɪꜱꜱɪᴏɴ.**`);
         }
 
         const lockAll = (args[0] || '').toLowerCase() === 'all';
@@ -61,8 +61,8 @@ module.exports = {
         try {
             if (!lockAll) {
                 const ok = await applyLock(message.channel);
-                if (!ok) return message.reply(`${ERROR_EMOJI} **ᴛʜɪꜱ ᴄʜᴀɴɴᴇʟ ᴛʏᴘᴇ ɪꜱ ɴᴏᴛ ꜱᴜᴘᴘᴏʀᴛᴇᴅ.**`);
-                return message.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴄʜᴀɴɴᴇʟ ʜᴀꜱ ʙᴇᴇɴ ʟᴏᴄᴋᴇᴅ.**`);
+                if (!ok) return message.channel.send(`${ERROR_EMOJI} **ᴛʜɪꜱ ᴄʜᴀɴɴᴇʟ ᴛʏᴘᴇ ɪꜱ ɴᴏᴛ ꜱᴜᴘᴘᴏʀᴛᴇᴅ.**`);
+                return message.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴄʜᴀɴɴᴇʟ ʜᴀꜱ ʙᴇᴇɴ ʟᴏᴄᴋᴇᴅ.**`);
             }
 
             let okCount = 0;
@@ -81,9 +81,9 @@ module.exports = {
                 }
             }
 
-            return message.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴄʜᴀɴɴᴇʟ ʜᴀꜱ ʙᴇᴇɴ ʟᴏᴄᴋᴇᴅ.**`);
+            return message.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴄʜᴀɴɴᴇʟ ʜᴀꜱ ʙᴇᴇɴ ʟᴏᴄᴋᴇᴅ.**`);
         } catch (e) {
-            return message.reply(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);
+            return message.channel.send(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);
         }
     },
 };
