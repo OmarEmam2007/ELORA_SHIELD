@@ -36,10 +36,29 @@ module.exports = {
             console.error('[LANG FILTER] Error:', e);
         }
 
-        // --- Anti-Link / Anti-Invite ---
+        // --- Instagram/TikTok Auto-Processing (never delete social links) ---
         try {
             const securityCfg = await GuildSecurityConfig.findOne({ guildId: message.guild.id }).catch(() => null);
             const antiLinkEnabled = securityCfg?.antiLinkEnabled !== false;
+
+            const content = String(message.content || '');
+            const socialType = checkLink(content);
+            if (socialType === 'INSTAGRAM' || socialType === 'TIKTOK') {
+                const urls = extractUrls(content).slice(0, 3);
+
+                await message.reply({ content: 'Processing your video...' }).catch(() => null);
+
+                for (const url of urls) {
+                    let embedUrl = url;
+                    if (socialType === 'TIKTOK') {
+                        embedUrl = url.replace(/https?:\/\/(www\.)?tiktok\.com\//i, 'https://www.vxtiktok.com/');
+                    } else {
+                        embedUrl = url.replace(/https?:\/\/(www\.)?instagram\.com\//i, 'https://ddinstagram.com/');
+                    }
+                    await message.channel.send({ content: embedUrl }).catch(() => null);
+                }
+                return;
+            }
 
             if (antiLinkEnabled) {
                 const isServerOwner = message.guild?.ownerId === message.author.id;
@@ -54,7 +73,7 @@ module.exports = {
                 );
 
                 if (!isServerOwner && !isAdministrator && !isWhitelisted) {
-                    const linkType = checkLink(String(message.content || ''));
+                    const linkType = checkLink(content);
 
                     if (linkType === 'INVITE') {
                         await message.delete().catch(() => {});
@@ -64,26 +83,6 @@ module.exports = {
                         }).catch(() => null);
                         if (warn) {
                             setTimeout(() => warn.delete().catch(() => {}), 5000);
-                        }
-                        return;
-                    }
-
-                    if (linkType === 'INSTAGRAM' || linkType === 'TIKTOK') {
-                        const urls = extractUrls(String(message.content || '')).slice(0, 3);
-
-                        await message.reply({ content: 'Processing your video...' }).catch(() => null);
-
-                        for (const url of urls) {
-                            let embedUrl = url;
-                            if (linkType === 'TIKTOK') {
-                                // Discord does not always unfurl TikTok reliably; vxtiktok helps render.
-                                embedUrl = url.replace(/https?:\/\/(www\.)?tiktok\.com\//i, 'https://www.vxtiktok.com/');
-                            } else if (linkType === 'INSTAGRAM') {
-                                // ddinstagram helps render Instagram reels/posts.
-                                embedUrl = url.replace(/https?:\/\/(www\.)?instagram\.com\//i, 'https://ddinstagram.com/');
-                            }
-
-                            await message.channel.send({ content: embedUrl }).catch(() => null);
                         }
                         return;
                     }
