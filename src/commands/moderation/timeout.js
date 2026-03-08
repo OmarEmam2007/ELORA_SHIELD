@@ -139,7 +139,7 @@ module.exports = {
             if (isSlash) {
                 await interaction.editReply({ embeds: [successEmbed], files: okAsset?.attachment ? [okAsset.attachment] : [] });
             } else {
-                await interaction.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴜꜱᴇʀ ʜᴀꜱ ʙᴇᴇɴ ᴛɪᴍᴇᴅ ᴏᴜᴛ.**`);
+                await interaction.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ${targetUser} ʜᴀꜱ ʙᴇᴇɴ ᴛɪᴍᴇᴅ ᴏᴜᴛ.**`);
             }
 
         } catch (error) {

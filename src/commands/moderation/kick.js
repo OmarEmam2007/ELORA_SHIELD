@@ -136,7 +136,7 @@ module.exports = {
                 if (okAsset?.url) successEmbed.setImage(okAsset.url);
                 await mainMsg.editReply({ embeds: [successEmbed], files: okAsset?.attachment ? [okAsset.attachment] : [] });
             } else {
-                await mainMsg.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴜꜱᴇʀ ʜᴀꜱ ʙᴇᴇɴ ᴋɪᴄᴋᴇᴅ.**`);
+                await mainMsg.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ${targetUser} ʜᴀꜱ ʙᴇᴇɴ ᴋɪᴄᴋᴇᴅ.**`);
             }
 
         } catch (error) {

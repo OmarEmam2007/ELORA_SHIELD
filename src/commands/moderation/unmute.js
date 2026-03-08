@@ -1,6 +1,7 @@
 const { PermissionFlagsBits } = require('discord.js');
 
 const DONE_EMOJI = '<:555:1479967165619634348>';
+const ERROR_EMOJI = '<:661071whitex:1479988133704761515>';
 const MUTED_ROLE_NAME = 'ᴍᴜᴛᴇᴅ';
 
 module.exports = {
@@ -35,7 +36,7 @@ module.exports = {
 
         try {
             await target.roles.remove(mutedRole, `Unmuted by ${message.author.tag}`);
-            return message.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴜꜱᴇʀ ʜᴀꜱ ʙᴇᴇɴ ᴜɴᴍᴜᴛᴇᴅ.**`);
+            return message.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ${target} ʜᴀꜱ ʙᴇᴇɴ ᴜɴᴍᴜᴛᴇᴅ.**`);
         } catch (e) {
             console.error('[UNMUTE] error:', e);
             return message.channel.send(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);

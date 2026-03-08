@@ -109,7 +109,7 @@ module.exports = {
             }
 
             await target.roles.add(mutedRole, `Muted by ${message.author.tag}`);
-            return message.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴜꜱᴇʀ ʜᴀꜱ ʙᴇᴇɴ ᴍᴜᴛᴇᴅ.**`);
+            return message.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ${target} ʜᴀꜱ ʙᴇᴇɴ ᴍᴜᴛᴇᴅ.**`);
         } catch (e) {
             console.error('[MUTE] error:', e);
             return message.channel.send(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);

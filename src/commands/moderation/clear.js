@@ -117,9 +117,9 @@ module.exports = {
                 await mainMsg.editReply({ embeds: [successEmbed], files: okAsset?.attachment ? [okAsset.attachment] : [] });
             } else {
                 if (prefixAckMsg) {
-                    await prefixAckMsg.edit(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴍᴇꜱꜱᴀɢᴇꜱ ʜᴀᴠᴇ ʙᴇᴇɴ ᴄʟᴇᴀʀᴇᴅ.**`).catch(() => { });
+                    await prefixAckMsg.edit(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴍᴇꜱꜱᴀɢᴇꜱ ʜᴀᴠᴇ ʙᴇᴇɴ ᴄʟᴇᴀʀᴇᴅ${targetUser ? ` ꜰᴏʀ ${targetUser}` : ''}.**`).catch(() => { });
                 } else {
-                    await channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴍᴇꜱꜱᴀɢᴇꜱ ʜᴀᴠᴇ ʙᴇᴇɴ ᴄʟᴇᴀʀᴇᴅ.**`).catch(() => { });
+                    await channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴍᴇꜱꜱᴀɢᴇꜱ ʜᴀᴠᴇ ʙᴇᴇɴ ᴄʟᴇᴀʀᴇᴅ${targetUser ? ` ꜰᴏʀ ${targetUser}` : ''}.**`).catch(() => { });
                 }
             }
 

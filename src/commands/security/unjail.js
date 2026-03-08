@@ -39,7 +39,7 @@ module.exports = {
             await userProfile.save();
         }
 
-        await message.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴜꜱᴇʀ ʜᴀꜱ ʙᴇᴇɴ ᴜɴᴊᴀɪʟᴇᴅ.**`);
+        await message.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ${targetUser} ʜᴀꜱ ʙᴇᴇɴ ᴜɴᴊᴀɪʟᴇᴅ.**`);
 
         const logChannel = message.guild.channels.cache.get(CASINO_LOGS_ID);
         if (logChannel) {

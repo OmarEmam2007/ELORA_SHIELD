@@ -47,7 +47,7 @@ module.exports = {
         userProfile.jailReleaseTime = new Date(Date.now() + duration * 60 * 60 * 1000);
         await userProfile.save();
 
-        await message.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴜꜱᴇʀ ʜᴀꜱ ʙᴇᴇɴ ᴊᴀɪʟᴇᴅ.**`);
+        await message.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ${targetUser} ʜᴀꜱ ʙᴇᴇɴ ᴊᴀɪʟᴇᴅ.**`);
 
         const logChannel = message.guild.channels.cache.get(CASINO_LOGS_ID);
         if (logChannel) {

@@ -59,17 +59,17 @@ module.exports = {
 
         const isRoleSubcommand = args[0]?.toLowerCase() === 'role';
         if (!isRoleSubcommand) {
-            return message.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: ᴇʟᴏʀᴀ ᴅᴇʟ ʀᴏʟᴇ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
+            return message.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴅᴇʟ ʀᴏʟᴇ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
         }
 
         const targetMember = message.mentions.members.first();
         if (!targetMember) {
-            return message.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: ᴇʟᴏʀᴀ ᴅᴇʟ ʀᴏʟᴇ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
+            return message.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴅᴇʟ ʀᴏʟᴇ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
         }
 
         const roleQuery = args.slice(2).join(' ').trim();
         if (!roleQuery) {
-            return message.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: ᴇʟᴏʀᴀ ᴅᴇʟ ʀᴏʟᴇ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
+            return message.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴅᴇʟ ʀᴏʟᴇ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
         }
 
         const role = findRole(message.guild, roleQuery);
@@ -97,7 +97,7 @@ module.exports = {
         try {
             await targetMember.roles.remove(role, `Prefix role removal by ${message.author.tag}`);
 
-            return message.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ.**`);
+            return message.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ${targetMember} ʟᴏꜱᴛ ᴛʜᴇ ʀᴏʟᴇ (${String(role?.name || 'role').toUpperCase()}).**`);
         } catch (e) {
             console.error('del role command error:', e);
             return message.channel.send(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);

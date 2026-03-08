@@ -67,7 +67,7 @@ module.exports = {
                         ? warns.map((w, i) => `**${i + 1}.** <t:${Math.floor(new Date(w.createdAt).getTime() / 1000)}:R> — ${w.reason} (by <@${w.moderatorId}>)`).join('\n')
                         : 'No warnings found.';
 
-                    return mainMsg.channel.send(`${DONE_EMOJI} **ᴡᴀʀɴɪɴɢꜱ ꜰᴏʀ ${target.tag}:**\n${desc}`);
+                    return mainMsg.channel.send(`${DONE_EMOJI} **ᴡᴀʀɴɪɴɢꜱ ꜰᴏʀ ${target}:**\n${desc}`);
                 } catch (e) {
                     return mainMsg.channel.send(`${ERROR_EMOJI} **ɪɴᴠᴀʟɪᴅ ᴜꜱᴇʀ.**`);
                 }
@@ -79,7 +79,7 @@ module.exports = {
                     const target = await bot.users.fetch(targetId);
                     const res = await WarnCase.deleteMany({ guildId: mainMsg.guild.id, userId: target.id }).catch(() => null);
                     const deleted = res?.deletedCount || 0;
-                    return mainMsg.channel.send(`${DONE_EMOJI} **ᴄʟᴇᴀʀᴇᴅ ${deleted} ᴡᴀʀɴɪɴɢ(s) ꜰᴏʀ ${target.tag}.**`);
+                    return mainMsg.channel.send(`${DONE_EMOJI} **ᴄʟᴇᴀʀᴇᴅ ${deleted} ᴡᴀʀɴɪɴɢ(s) ꜰᴏʀ ${target}.**`);
                 } catch (e) {
                     return mainMsg.channel.send(`${ERROR_EMOJI} **ɪɴᴠᴀʟɪᴅ ᴜꜱᴇʀ.**`);
                 }
@@ -117,7 +117,7 @@ module.exports = {
                         }
                     }
 
-                    return mainMsg.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴜꜱᴇʀ ʜᴀꜱ ʙᴇᴇɴ ᴡᴀʀɴᴇᴅ.**`);
+                    return mainMsg.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ${targetUser} ʜᴀꜱ ʙᴇᴇɴ ᴡᴀʀɴᴇᴅ.**`);
                 } catch (e) {
                     console.error(e);
                     return mainMsg.channel.send(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);
