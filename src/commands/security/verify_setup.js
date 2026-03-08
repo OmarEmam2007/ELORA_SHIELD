@@ -4,7 +4,7 @@ const ModSettings = require('../../models/ModSettings');
 
 const VERIFY_EMOJI_NAME = '555';
 const VERIFY_EMOJI_ID = '1479967165619634348';
-const DONE_EMOJI = '<a:555:1430395692299456704>';
+const DONE_EMOJI = '<:555:1479967165619634348>';
 
 module.exports = {
     data: new SlashCommandBuilder()
