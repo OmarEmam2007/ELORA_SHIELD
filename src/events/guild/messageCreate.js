@@ -1,5 +1,5 @@
 const { PermissionFlagsBits, EmbedBuilder } = require('discord.js');
-const { checkLink } = require('../../utils/securityUtils');
+const { checkLink, extractUrls } = require('../../utils/securityUtils');
 const ModSettings = require('../../models/ModSettings');
 const GuildSecurityConfig = require('../../models/GuildSecurityConfig');
 const { detectProfanitySimple } = require('../../utils/moderation/coreDetector');
@@ -55,16 +55,53 @@ module.exports = {
 
                 if (!isServerOwner && !isAdministrator && !isWhitelisted) {
                     const linkType = checkLink(String(message.content || ''));
-                    if (linkType) {
+
+                    if (linkType === 'INVITE') {
                         await message.delete().catch(() => {});
 
                         const warn = await message.channel.send({
-                            content: `⚠️ ${message.author}, links are not allowed in this server.`
+                            content: `⚠️ ${message.author}, Discord invite links are not allowed in this server.`
                         }).catch(() => null);
                         if (warn) {
                             setTimeout(() => warn.delete().catch(() => {}), 5000);
                         }
                         return;
+                    }
+
+                    if (linkType === 'INSTAGRAM' || linkType === 'TIKTOK') {
+                        const urls = extractUrls(String(message.content || '')).slice(0, 3);
+
+                        await message.reply({ content: 'Processing your video...' }).catch(() => null);
+
+                        for (const url of urls) {
+                            let embedUrl = url;
+                            if (linkType === 'TIKTOK') {
+                                // Discord does not always unfurl TikTok reliably; vxtiktok helps render.
+                                embedUrl = url.replace(/https?:\/\/(www\.)?tiktok\.com\//i, 'https://www.vxtiktok.com/');
+                            } else if (linkType === 'INSTAGRAM') {
+                                // ddinstagram helps render Instagram reels/posts.
+                                embedUrl = url.replace(/https?:\/\/(www\.)?instagram\.com\//i, 'https://ddinstagram.com/');
+                            }
+
+                            await message.channel.send({ content: embedUrl }).catch(() => null);
+                        }
+                        return;
+                    }
+
+                    if (linkType === 'LINK') {
+                        const text = String(message.content || '').toLowerCase();
+                        const suspicious = /(free\s*nitro|steam\s*gift|airdrop|giveaway|\bscam\b|\bphish\b|\blogin\b.*\bdiscord\b|discord\.(gift|nitro)|bit\.ly|tinyurl\.com)/i.test(text);
+                        if (suspicious) {
+                            await message.delete().catch(() => {});
+
+                            const warn = await message.channel.send({
+                                content: `⚠️ ${message.author}, that link looks suspicious and was removed.`
+                            }).catch(() => null);
+                            if (warn) {
+                                setTimeout(() => warn.delete().catch(() => {}), 7000);
+                            }
+                            return;
+                        }
                     }
                 }
             }
