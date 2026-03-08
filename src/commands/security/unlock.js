@@ -1,7 +1,7 @@
 const { PermissionFlagsBits, ChannelType } = require('discord.js');
 
-const DONE_EMOJI = '<a:555:1430395692299456704>';
-const ERROR_EMOJI = '<a:661071whitex:1433339552876990465>';
+const DONE_EMOJI = '<a:10:1430395692299456704>';
+const ERROR_EMOJI = '<a:false:1433339552876990465>';
 
 module.exports = {
     name: 'unlock',
