@@ -1,7 +1,7 @@
 const User = require('../../models/User');
  
-const DONE_EMOJI = '<:555:1479967165619634348>';
-const ERROR_EMOJI = '<:661071whitex:1479988133704761515>';
+const DONE_EMOJI = '<a:555:1430395692299456704>';
+const ERROR_EMOJI = '<a:661071whitex:1433339552876990465>';
 
 const MODERATOR_ROLE = '1467467348595314740';
 const ADMIN_ROLE = '1467466915902394461';
@@ -14,23 +14,23 @@ module.exports = {
         if (!message.guild) return;
 
         if (!message.member.roles.cache.has(MODERATOR_ROLE) && !message.member.roles.cache.has(ADMIN_ROLE)) {
-            return message.channel.send(`${ERROR_EMOJI} **ʏᴏᴜ ᴅᴏ ɴᴏᴛ ʜᴀᴠᴇ ᴘᴇʀᴍɪꜱꜱɪᴏɴ.**`);
+            return message.reply(`${ERROR_EMOJI} **ʏᴏᴜ ᴅᴏ ɴᴏᴛ ʜᴀᴠᴇ ᴘᴇʀᴍɪꜱꜱɪᴏɴ.**`);
         }
 
         const targetUser = message.mentions.users.first();
         const duration = parseInt(args[1]);
 
         if (!targetUser) {
-            return message.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴊᴀɪʟ @ᴜꜱᴇʀ [ʜᴏᴜʀꜱ]**`);
+            return message.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴊᴀɪʟ @ᴜꜱᴇʀ [ʜᴏᴜʀꜱ]**`);
         }
 
         if (!duration || isNaN(duration) || duration <= 0) {
-            return message.channel.send(`${ERROR_EMOJI} **ᴘʟᴇᴀꜱᴇ ꜱᴘᴇᴄɪꜰʏ ᴀ ᴠᴀʟɪᴅ ᴅᴜʀᴀᴛɪᴏɴ ɪɴ ʜᴏᴜʀꜱ.**`);
+            return message.reply(`${ERROR_EMOJI} **ᴘʟᴇᴀꜱᴇ ꜱᴘᴇᴄɪꜰʏ ᴀ ᴠᴀʟɪᴅ ᴅᴜʀᴀᴛɪᴏɴ ɪɴ ʜᴏᴜʀꜱ.**`);
         }
 
         const targetMember = await message.guild.members.fetch(targetUser.id).catch(() => null);
         if (!targetMember) {
-            return message.channel.send(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ ɪɴ ᴛʜɪꜱ ꜱᴇʀᴠᴇʀ.**`);
+            return message.reply(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ ɪɴ ᴛʜɪꜱ ꜱᴇʀᴠᴇʀ.**`);
         }
 
         const jailedRole = message.guild.roles.cache.get(JAILED_ROLE);
@@ -47,7 +47,7 @@ module.exports = {
         userProfile.jailReleaseTime = new Date(Date.now() + duration * 60 * 60 * 1000);
         await userProfile.save();
 
-        await message.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ${targetUser} ʜᴀꜱ ʙᴇᴇɴ ᴊᴀɪʟᴇᴅ.**`);
+        await message.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ, ${targetUser} ʜᴀꜱ ʙᴇᴇɴ ᴊᴀɪʟᴇᴅ.**`);
 
         const logChannel = message.guild.channels.cache.get(CASINO_LOGS_ID);
         if (logChannel) {

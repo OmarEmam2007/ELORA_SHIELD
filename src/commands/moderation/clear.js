@@ -2,8 +2,8 @@ const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('disc
 const THEME = require('../../utils/theme');
 const { buildAssetAttachment } = require('../../utils/responseAssets');
 
-const DONE_EMOJI = '<:555:1479967165619634348>';
-const ERROR_EMOJI = '<:661071whitex:1479988133704761515>';
+const DONE_EMOJI = '<a:555:1430395692299456704>';
+const ERROR_EMOJI = '<a:661071whitex:1433339552876990465>';
 
 module.exports = {
     name: 'clear',
@@ -49,7 +49,7 @@ module.exports = {
             // Prefix: .clear [Amount]
             amount = parseInt(commandArgs[0]);
             if (isNaN(amount) || amount < 1 || amount > 100) {
-                return mainMsg.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴄʟᴇᴀʀ [1-100]**`);
+                return mainMsg.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴄʟᴇᴀʀ [1-100]**`);
             }
             
             // Basic prefix target detection
@@ -97,12 +97,6 @@ module.exports = {
                 toDelete = toDelete.filter(m => String(m.content || '').toLowerCase().includes(needle));
             }
 
-            // For prefix, send a placeholder first so we can safely edit/reply even if the command message is deleted.
-            let prefixAckMsg = null;
-            if (!isSlash) {
-                prefixAckMsg = await channel.send(`${DONE_EMOJI} **...**`).catch(() => null);
-            }
-
             // Delete
             await channel.bulkDelete(toDelete, true);
 
@@ -116,11 +110,7 @@ module.exports = {
                 if (okAsset?.url) successEmbed.setImage(okAsset.url);
                 await mainMsg.editReply({ embeds: [successEmbed], files: okAsset?.attachment ? [okAsset.attachment] : [] });
             } else {
-                if (prefixAckMsg) {
-                    await prefixAckMsg.edit(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴍᴇꜱꜱᴀɢᴇꜱ ʜᴀᴠᴇ ʙᴇᴇɴ ᴄʟᴇᴀʀᴇᴅ${targetUser ? ` ꜰᴏʀ ${targetUser}` : ''}.**`).catch(() => { });
-                } else {
-                    await channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴍᴇꜱꜱᴀɢᴇꜱ ʜᴀᴠᴇ ʙᴇᴇɴ ᴄʟᴇᴀʀᴇᴅ${targetUser ? ` ꜰᴏʀ ${targetUser}` : ''}.**`).catch(() => { });
-                }
+                await mainMsg.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ, ᴛʜᴇ ᴍᴇꜱꜱᴀɢᴇꜱ ʜᴀꜱ ʙᴇᴇɴ ᴄʟᴇᴀʀᴇᴅ${targetUser ? ` ꜰᴏʀ ${targetUser}` : ''}.**`).catch(() => { });
             }
 
         } catch (error) {

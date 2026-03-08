@@ -3,8 +3,8 @@ const WarnCase = require('../../models/WarnCase');
 const THEME = require('../../utils/theme');
 const { buildAssetAttachment } = require('../../utils/responseAssets');
 
-const DONE_EMOJI = '<:555:1479967165619634348>';
-const ERROR_EMOJI = '<:661071whitex:1479988133704761515>';
+const DONE_EMOJI = '<a:555:1430395692299456704>';
+const ERROR_EMOJI = '<a:661071whitex:1433339552876990465>';
 
 module.exports = {
     name: 'warn',
@@ -48,13 +48,13 @@ module.exports = {
 
         if (!isSlash) {
             // Check if it's a server message
-            if (!mainMsg.guild) return mainMsg.channel.send('This command can only be used in a server.');
+            if (!mainMsg.guild) return mainMsg.reply('This command can only be used in a server.');
 
             // Since warn has subcommands, prefix needs to handle them manually
             const sub = commandArgs[0]?.toLowerCase();
             if (sub === 'list') {
                 const targetId = commandArgs[1]?.replace(/[<@!>]/g, '');
-                if (!targetId) return mainMsg.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴡᴀʀɴ ʟɪꜱᴛ @ᴜꜱᴇʀ**`);
+                if (!targetId) return mainMsg.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴡᴀʀɴ ʟɪꜱᴛ @ᴜꜱᴇʀ**`);
                 
                 try {
                     const target = await bot.users.fetch(targetId);
@@ -67,28 +67,28 @@ module.exports = {
                         ? warns.map((w, i) => `**${i + 1}.** <t:${Math.floor(new Date(w.createdAt).getTime() / 1000)}:R> — ${w.reason} (by <@${w.moderatorId}>)`).join('\n')
                         : 'No warnings found.';
 
-                    return mainMsg.channel.send(`${DONE_EMOJI} **ᴡᴀʀɴɪɴɢꜱ ꜰᴏʀ ${target}:**\n${desc}`);
+                    return mainMsg.reply(`${DONE_EMOJI} **ᴡᴀʀɴɪɴɢꜱ ꜰᴏʀ ${target}:**\n${desc}`);
                 } catch (e) {
-                    return mainMsg.channel.send(`${ERROR_EMOJI} **ɪɴᴠᴀʟɪᴅ ᴜꜱᴇʀ.**`);
+                    return mainMsg.reply(`${ERROR_EMOJI} **ɪɴᴠᴀʟɪᴅ ᴜꜱᴇʀ.**`);
                 }
             } else if (sub === 'clear') {
                 const targetId = commandArgs[1]?.replace(/[<@!>]/g, '');
-                if (!targetId) return mainMsg.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴡᴀʀɴ ᴄʟᴇᴀʀ @ᴜꜱᴇʀ**`);
+                if (!targetId) return mainMsg.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴡᴀʀɴ ᴄʟᴇᴀʀ @ᴜꜱᴇʀ**`);
                 
                 try {
                     const target = await bot.users.fetch(targetId);
                     const res = await WarnCase.deleteMany({ guildId: mainMsg.guild.id, userId: target.id }).catch(() => null);
                     const deleted = res?.deletedCount || 0;
-                    return mainMsg.channel.send(`${DONE_EMOJI} **ᴄʟᴇᴀʀᴇᴅ ${deleted} ᴡᴀʀɴɪɴɢ(s) ꜰᴏʀ ${target}.**`);
+                    return mainMsg.reply(`${DONE_EMOJI} **ᴄʟᴇᴀʀᴇᴅ ${deleted} ᴡᴀʀɴɪɴɢ(s) ꜰᴏʀ ${target}.**`);
                 } catch (e) {
-                    return mainMsg.channel.send(`${ERROR_EMOJI} **ɪɴᴠᴀʟɪᴅ ᴜꜱᴇʀ.**`);
+                    return mainMsg.reply(`${ERROR_EMOJI} **ɪɴᴠᴀʟɪᴅ ᴜꜱᴇʀ.**`);
                 }
             } else {
                 // Default to 'add'
                 const targetId = commandArgs[0]?.replace(/[<@!>]/g, '');
                 const reason = commandArgs.slice(1).join(' ') || 'General Warning';
                 
-                if (!targetId) return mainMsg.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴡᴀʀɴ @ᴜꜱᴇʀ [ʀᴇᴀꜱᴏɴ]**`);
+                if (!targetId) return mainMsg.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴡᴀʀɴ @ᴜꜱᴇʀ [ʀᴇᴀꜱᴏɴ]**`);
                 
                 try {
                     const targetUser = await bot.users.fetch(targetId);
@@ -117,10 +117,10 @@ module.exports = {
                         }
                     }
 
-                    return mainMsg.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ${targetUser} ʜᴀꜱ ʙᴇᴇɴ ᴡᴀʀɴᴇᴅ.**`);
+                    return mainMsg.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ, ${targetUser} ʜᴀꜱ ʙᴇᴇɴ ᴡᴀʀɴᴇᴅ.**`);
                 } catch (e) {
                     console.error(e);
-                    return mainMsg.channel.send(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);
+                    return mainMsg.reply(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);
                 }
             }
         }

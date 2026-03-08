@@ -1,7 +1,7 @@
 const User = require('../../models/User');
  
-const DONE_EMOJI = '<:555:1479967165619634348>';
-const ERROR_EMOJI = '<:661071whitex:1479988133704761515>';
+const DONE_EMOJI = '<a:555:1430395692299456704>';
+const ERROR_EMOJI = '<a:661071whitex:1433339552876990465>';
 
 const MODERATOR_ROLE = '1467467348595314740';
 const ADMIN_ROLE = '1467466915902394461';
@@ -14,17 +14,17 @@ module.exports = {
         if (!message.guild) return;
 
         if (!message.member.roles.cache.has(MODERATOR_ROLE) && !message.member.roles.cache.has(ADMIN_ROLE)) {
-            return message.channel.send(`${ERROR_EMOJI} **ʏᴏᴜ ᴅᴏ ɴᴏᴛ ʜᴀᴠᴇ ᴘᴇʀᴍɪꜱꜱɪᴏɴ.**`);
+            return message.reply(`${ERROR_EMOJI} **ʏᴏᴜ ᴅᴏ ɴᴏᴛ ʜᴀᴠᴇ ᴘᴇʀᴍɪꜱꜱɪᴏɴ.**`);
         }
 
         const targetUser = message.mentions.users.first();
         if (!targetUser) {
-            return message.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴜɴᴊᴀɪʟ @ᴜꜱᴇʀ**`);
+            return message.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴜɴᴊᴀɪʟ @ᴜꜱᴇʀ**`);
         }
 
         const targetMember = await message.guild.members.fetch(targetUser.id).catch(() => null);
         if (!targetMember) {
-            return message.channel.send(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ ɪɴ ᴛʜɪꜱ ꜱᴇʀᴠᴇʀ.**`);
+            return message.reply(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ ɪɴ ᴛʜɪꜱ ꜱᴇʀᴠᴇʀ.**`);
         }
 
         const jailedRole = message.guild.roles.cache.get(JAILED_ROLE);
@@ -39,7 +39,7 @@ module.exports = {
             await userProfile.save();
         }
 
-        await message.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ${targetUser} ʜᴀꜱ ʙᴇᴇɴ ᴜɴᴊᴀɪʟᴇᴅ.**`);
+        await message.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ, ${targetUser} ʜᴀꜱ ʙᴇᴇɴ ᴜɴᴊᴀɪʟᴇᴅ.**`);
 
         const logChannel = message.guild.channels.cache.get(CASINO_LOGS_ID);
         if (logChannel) {

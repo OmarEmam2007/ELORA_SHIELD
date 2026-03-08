@@ -1,7 +1,7 @@
 const { PermissionFlagsBits } = require('discord.js');
 
-const DONE_EMOJI = '<:555:1479967165619634348>';
-const ERROR_EMOJI = '<:661071whitex:1479988133704761515>';
+const DONE_EMOJI = '<a:555:1430395692299456704>';
+const ERROR_EMOJI = '<a:661071whitex:1433339552876990465>';
 
 const SMALL_CAPS_MAP = {
     'ᴀ': 'a', 'ʙ': 'b', 'ᴄ': 'c', 'ᴅ': 'd', 'ᴇ': 'e', 'ꜰ': 'f', 'ғ': 'f',
@@ -54,48 +54,48 @@ module.exports = {
     aliases: ['addrole', 'giverole', 'r'],
     async execute(message, client, args) {
         if (!message.member?.permissions?.has(PermissionFlagsBits.ManageRoles)) {
-            return message.channel.send(`${ERROR_EMOJI} **ʏᴏᴜ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ʀᴏʟᴇꜱ ᴛᴏ ᴜꜱᴇ ᴛʜɪꜱ.**`);
+            return message.reply(`${ERROR_EMOJI} **ʏᴏᴜ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ʀᴏʟᴇꜱ ᴛᴏ ᴜꜱᴇ ᴛʜɪꜱ.**`);
         }
 
         const targetMember = message.mentions.members.first();
         if (!targetMember) {
-            return message.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ʀ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
+            return message.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ʀ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
         }
 
         const roleQuery = args.slice(1).join(' ').trim();
         if (!roleQuery) {
-            return message.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ʀ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
+            return message.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ʀ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
         }
 
         const role = findRole(message.guild, roleQuery);
         if (!role) {
-            return message.channel.send(`${ERROR_EMOJI} **ʀᴏʟᴇ ɴᴏᴛ ꜰᴏᴜɴᴅ.**`);
+            return message.reply(`${ERROR_EMOJI} **ʀᴏʟᴇ ɴᴏᴛ ꜰᴏᴜɴᴅ.**`);
         }
 
         if (role.managed || role.name === '@everyone') {
-            return message.channel.send(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ɢɪᴠᴇ ᴛʜɪꜱ ʀᴏʟᴇ.**`);
+            return message.reply(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ɢɪᴠᴇ ᴛʜɪꜱ ʀᴏʟᴇ.**`);
         }
 
         const botMember = message.guild.members.me;
         if (!botMember?.permissions?.has(PermissionFlagsBits.ManageRoles)) {
-            return message.channel.send(`${ERROR_EMOJI} **ɪ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ʀᴏʟᴇꜱ ᴘᴇʀᴍɪꜱꜱɪᴏɴ.**`);
+            return message.reply(`${ERROR_EMOJI} **ɪ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ʀᴏʟᴇꜱ ᴘᴇʀᴍɪꜱꜱɪᴏɴ.**`);
         }
 
         if (!role.editable || (botMember.roles.highest?.position ?? 0) <= role.position) {
-            return message.channel.send(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ɢɪᴠᴇ ᴛʜɪꜱ ʀᴏʟᴇ (ʜɪᴇʀᴀʀᴄʜʏ).**`);
+            return message.reply(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ɢɪᴠᴇ ᴛʜɪꜱ ʀᴏʟᴇ (ʜɪᴇʀᴀʀᴄʜʏ).**`);
         }
 
         if (targetMember.roles.cache.has(role.id)) {
-            return message.channel.send(`${ERROR_EMOJI} **ᴛʜɪꜱ ᴜꜱᴇʀ ᴀʟʀᴇᴀᴅʏ ʜᴀꜱ ᴛʜᴀᴛ ʀᴏʟᴇ.**`);
+            return message.reply(`${ERROR_EMOJI} **ᴛʜɪꜱ ᴜꜱᴇʀ ᴀʟʀᴇᴀᴅʏ ʜᴀꜱ ᴛʜᴀᴛ ʀᴏʟᴇ.**`);
         }
 
         try {
             await targetMember.roles.add(role, `Prefix role assignment by ${message.author.tag}`);
 
-            return message.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ${targetMember} ɢᴏᴛ ᴛʜᴇ ʀᴏʟᴇ (${String(role?.name || 'role').toUpperCase()}).**`);
+            return message.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ, ${targetMember} ɢᴏᴛ ᴛʜᴇ ʀᴏʟᴇ (${String(role?.name || 'role').toUpperCase()}).**`);
         } catch (e) {
             console.error('role command error:', e);
-            return message.channel.send(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);
+            return message.reply(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);
         }
     }
 };

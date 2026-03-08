@@ -2,8 +2,8 @@ const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('disc
 const THEME = require('../../utils/theme');
 const { buildAssetAttachment } = require('../../utils/responseAssets');
 
-const DONE_EMOJI = '<:555:1479967165619634348>';
-const ERROR_EMOJI = '<:661071whitex:1479988133704761515>';
+const DONE_EMOJI = '<a:555:1430395692299456704>';
+const ERROR_EMOJI = '<a:661071whitex:1433339552876990465>';
 
 module.exports = {
     name: 'timeout',
@@ -42,22 +42,22 @@ module.exports = {
             // Prefix: .time @User [Minutes] [Reason]
             const targetId = commandArgs[0]?.replace(/[<@!>]/g, '');
             if (!targetId || !commandArgs[1]) {
-                return interaction.channel.send(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴛɪᴍᴇ @ᴜꜱᴇʀ [ᴍɪɴᴜᴛᴇꜱ] [ʀᴇᴀꜱᴏɴ]**`);
+                return interaction.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴛɪᴍᴇ @ᴜꜱᴇʀ [ᴍɪɴᴜᴛᴇꜱ] [ʀᴇᴀꜱᴏɴ]**`);
             }
             try {
                 targetUser = await bot.users.fetch(targetId);
             } catch (error) {
-                return interaction.channel.send(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ.**`);
+                return interaction.reply(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ.**`);
             }
 
             duration = parseInt(commandArgs[1]);
-            if (isNaN(duration)) return interaction.channel.send(`${ERROR_EMOJI} **ɪɴᴠᴀʟɪᴅ ᴅᴜʀᴀᴛɪᴏɴ.**`);
+            if (isNaN(duration)) return interaction.reply(`${ERROR_EMOJI} **ɪɴᴠᴀʟɪᴅ ᴅᴜʀᴀᴛɪᴏɴ.**`);
             reason = commandArgs.slice(2).join(' ') || 'Temporal Stasis Protocol';
         }
 
         const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
         if (!member) {
-            return interaction.channel.send(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɪꜱ ɴᴏᴛ ɪɴ ᴛʜɪꜱ ꜱᴇʀᴠᴇʀ.**`);
+            return interaction.reply(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɪꜱ ɴᴏᴛ ɪɴ ᴛʜɪꜱ ꜱᴇʀᴠᴇʀ.**`);
         }
 
         const SPECIAL_EXECUTOR_ID = '1380794290350981130';
@@ -73,7 +73,7 @@ module.exports = {
                 if (badAsset?.url) err.setImage(badAsset.url);
                 return interaction.reply({ embeds: [err], files: badAsset?.attachment ? [badAsset.attachment] : [], ephemeral: true });
             }
-            return interaction.channel.send(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ᴛɪᴍᴇᴏᴜᴛ ᴛʜɪꜱ ᴜꜱᴇʀ.**`);
+            return interaction.reply(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ᴛɪᴍᴇᴏᴜᴛ ᴛʜɪꜱ ᴜꜱᴇʀ.**`);
         }
 
         // --- 2. Animation (slash only) ---
@@ -139,7 +139,7 @@ module.exports = {
             if (isSlash) {
                 await interaction.editReply({ embeds: [successEmbed], files: okAsset?.attachment ? [okAsset.attachment] : [] });
             } else {
-                await interaction.channel.send(`${DONE_EMOJI} **ᴅᴏɴᴇ, ${targetUser} ʜᴀꜱ ʙᴇᴇɴ ᴛɪᴍᴇᴅ ᴏᴜᴛ.**`);
+                await interaction.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ, ${targetUser} ʜᴀꜱ ʙᴇᴇɴ ᴛɪᴍᴇᴅ ᴏᴜᴛ.**`);
             }
 
         } catch (error) {
@@ -150,7 +150,7 @@ module.exports = {
                 if (badAsset?.url) err.setImage(badAsset.url);
                 await interaction.editReply({ embeds: [err], files: badAsset?.attachment ? [badAsset.attachment] : [] });
             } else {
-                await interaction.channel.send(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);
+                await interaction.reply(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`);
             }
         }
     },
