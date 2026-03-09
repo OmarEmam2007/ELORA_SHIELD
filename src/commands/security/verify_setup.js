@@ -13,6 +13,11 @@ module.exports = {
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
     async execute(interaction) {
+        const hasAdministrator = Boolean(interaction.member?.permissions?.has?.(PermissionFlagsBits.Administrator));
+        if (!hasAdministrator) {
+            return interaction.reply({ content: '❌ You need **Administrator** permission to use this command.', ephemeral: true }).catch(() => null);
+        }
+
         if (!interaction.inGuild?.()) {
             return interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
         }

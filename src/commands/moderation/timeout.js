@@ -21,6 +21,15 @@ module.exports = {
         const isSlash = interaction.isChatInputCommand?.();
         const user = isSlash ? interaction.user : interaction.author;
 
+        const memberInvoker = interaction.member;
+        const hasModerateMembers = Boolean(memberInvoker?.permissions?.has?.(PermissionFlagsBits.ModerateMembers));
+        if (!hasModerateMembers) {
+            if (isSlash) {
+                return interaction.reply({ content: '❌ You need **Moderate Members** permission to use this command.', ephemeral: true }).catch(() => null);
+            }
+            return interaction.reply(`${ERROR_EMOJI} **You need Moderate Members permission to use this command.**`).catch(() => null);
+        }
+
         // Signature check
         let mainMsg = interaction;
         let bot = client;

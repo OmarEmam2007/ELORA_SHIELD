@@ -12,6 +12,11 @@ module.exports = {
     async execute(interaction, client, args) {
         const isSlash = interaction.isChatInputCommand?.();
 
+        const hasAdministrator = Boolean(interaction.member?.permissions?.has?.(PermissionFlagsBits.Administrator));
+        if (!hasAdministrator) {
+            return interaction.reply({ content: '❌ You need **Administrator** permission to use this command.', ephemeral: true }).catch(() => null);
+        }
+
         // Hybrid input support
         let mainMsg = interaction;
         let bot = client;

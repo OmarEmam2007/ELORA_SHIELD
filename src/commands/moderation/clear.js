@@ -27,6 +27,15 @@ module.exports = {
         const isSlash = interaction.isChatInputCommand?.();
         const user = isSlash ? interaction.user : interaction.author;
 
+        const member = interaction.member;
+        const hasManageMessages = Boolean(member?.permissions?.has?.(PermissionFlagsBits.ManageMessages));
+        if (!hasManageMessages) {
+            if (isSlash) {
+                return interaction.reply({ content: '❌ You need **Manage Messages** permission to use this command.', ephemeral: true }).catch(() => null);
+            }
+            return interaction.reply(`${ERROR_EMOJI} **You need Manage Messages permission to use this command.**`).catch(() => null);
+        }
+
         // Signature check
         let mainMsg = interaction;
         let bot = client;

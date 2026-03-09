@@ -7,6 +7,11 @@ module.exports = {
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     async execute(interaction, client) {
 
+        const hasAdministrator = Boolean(interaction.member?.permissions?.has?.(PermissionFlagsBits.Administrator));
+        if (!hasAdministrator) {
+            return interaction.reply({ content: '❌ You need **Administrator** permission to use this command.', ephemeral: true }).catch(() => null);
+        }
+
         // Load the local image
         const file = new AttachmentBuilder('./assets/moon.jpg');
 

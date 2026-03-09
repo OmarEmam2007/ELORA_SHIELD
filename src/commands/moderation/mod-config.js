@@ -67,6 +67,11 @@ module.exports = {
                 .setDescription('List all blocked terms (built-in + custom) for this server.')
         ),
     async execute(interaction, client) {
+        const hasAdministrator = Boolean(interaction.member?.permissions?.has?.(PermissionFlagsBits.Administrator));
+        if (!hasAdministrator) {
+            return interaction.reply({ content: '❌ You need **Administrator** permission to use this command.', ephemeral: true }).catch(() => null);
+        }
+
         const sub = interaction.options.getSubcommand();
 
         if (sub === 'logs') {

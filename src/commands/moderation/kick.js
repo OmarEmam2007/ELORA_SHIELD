@@ -20,6 +20,15 @@ module.exports = {
         const isSlash = interaction.isChatInputCommand?.();
         const user = isSlash ? interaction.user : interaction.author;
 
+        const memberInvoker = interaction.member;
+        const hasKickMembers = Boolean(memberInvoker?.permissions?.has?.(PermissionFlagsBits.KickMembers));
+        if (!hasKickMembers) {
+            if (isSlash) {
+                return interaction.reply({ content: '❌ You need **Kick Members** permission to use this command.', ephemeral: true }).catch(() => null);
+            }
+            return interaction.reply(`${ERROR_EMOJI} **You need Kick Members permission to use this command.**`).catch(() => null);
+        }
+
         // Signature check: handle both (interaction, client, args) and (message, args, client)
         let mainMsg = interaction;
         let bot = client;

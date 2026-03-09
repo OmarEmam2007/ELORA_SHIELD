@@ -88,6 +88,11 @@ module.exports = {
         ),
 
     async execute(interaction) {
+        const hasAdministrator = Boolean(interaction.member?.permissions?.has?.(PermissionFlagsBits.Administrator));
+        if (!hasAdministrator) {
+            return interaction.reply({ content: '❌ You need **Administrator** permission to use this command.', ephemeral: true }).catch(() => null);
+        }
+
         const sub = interaction.options.getSubcommand();
         const guildId = interaction.guildId;
 

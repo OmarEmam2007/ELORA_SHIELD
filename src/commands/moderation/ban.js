@@ -21,6 +21,15 @@ module.exports = {
         const isSlash = interaction.isChatInputCommand?.();
         const user = isSlash ? interaction.user : interaction.author;
 
+        const memberInvoker = interaction.member;
+        const hasBanMembers = Boolean(memberInvoker?.permissions?.has?.(PermissionFlagsBits.BanMembers));
+        if (!hasBanMembers) {
+            if (isSlash) {
+                return interaction.reply({ content: '❌ You need **Ban Members** permission to use this command.', ephemeral: true }).catch(() => null);
+            }
+            return interaction.reply(`${ERROR_EMOJI} **You need Ban Members permission to use this command.**`).catch(() => null);
+        }
+
         // Signature check: if interaction is the client, we were called as execute(message, client, args)
         let mainMsg = interaction;
         let bot = client;
