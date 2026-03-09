@@ -14,6 +14,56 @@ module.exports = {
 
         const ANTISWEAR_DEBUG = process.env.ANTISWEAR_DEBUG === '1';
 
+        // --- Anti-Swear Toggle Commands (per-channel) ---
+        // We handle these early so the command itself never gets deleted by anti-swear.
+        try {
+            const raw = String(message.content || '').trim();
+            const lower = raw.toLowerCase();
+            const isToggleCmd = lower === '/turn_on_anti' || lower === '/turn_off_anti';
+            if (isToggleCmd) {
+                const isServerOwner = message.guild?.ownerId === message.author.id;
+                const isAdministrator = message.member?.permissions?.has(PermissionFlagsBits.Administrator);
+                if (!isServerOwner && !isAdministrator) {
+                    await message.reply({ content: '❌ You need Administrator permission to use this command.' }).catch(() => null);
+                    return;
+                }
+
+                const guildId = message.guild.id;
+                const channelId = message.channelId;
+                const modSettings = await ModSettings.findOneAndUpdate(
+                    { guildId },
+                    { $setOnInsert: { guildId } },
+                    { upsert: true, new: true }
+                ).catch(() => null);
+
+                if (!modSettings) {
+                    await message.reply({ content: '❌ Failed to update anti-swear settings (database error).' }).catch(() => null);
+                    return;
+                }
+
+                const disabled = Array.isArray(modSettings.antiSwearDisabledChannels) ? modSettings.antiSwearDisabledChannels : [];
+                const disabledSet = new Set(disabled);
+
+                if (lower === '/turn_off_anti') {
+                    disabledSet.add(channelId);
+                    modSettings.antiSwearDisabledChannels = Array.from(disabledSet);
+                    await modSettings.save().catch(() => null);
+                    await message.reply({ content: '✅ Anti-swear system is now **OFF** in this room.' }).catch(() => null);
+                    return;
+                }
+
+                if (lower === '/turn_on_anti') {
+                    disabledSet.delete(channelId);
+                    modSettings.antiSwearDisabledChannels = Array.from(disabledSet);
+                    await modSettings.save().catch(() => null);
+                    await message.reply({ content: '✅ Anti-swear system is now **ON** in this room.' }).catch(() => null);
+                    return;
+                }
+            }
+        } catch (e) {
+            console.error('[ANTISWEAR TOGGLE] Error:', e);
+        }
+
         // --- Language filter: block Arabic in specific channel ---
         try {
             if (message.channelId === '1462025794481164461') {
@@ -120,6 +170,8 @@ module.exports = {
         try {
             const modSettings = await ModSettings.findOne({ guildId: message.guild.id }).catch(() => null);
             const antiSwearEnabled = modSettings?.antiSwearEnabled !== false;
+            const disabledChannels = Array.isArray(modSettings?.antiSwearDisabledChannels) ? modSettings.antiSwearDisabledChannels : [];
+            const antiSwearEnabledHere = antiSwearEnabled && !disabledChannels.includes(message.channelId);
 
             const isServerOwner = message.guild?.ownerId === message.author.id;
             const isAdministrator = message.member?.permissions?.has(PermissionFlagsBits.Administrator);
@@ -137,6 +189,7 @@ module.exports = {
                     channelId: message.channelId,
                     userId: message.author.id,
                     antiSwearEnabled,
+                    antiSwearEnabledHere,
                     isServerOwner,
                     isAdministrator,
                     isWhitelisted,
@@ -144,7 +197,7 @@ module.exports = {
                 console.log('[ANTISWEAR] textForModeration=', { text: textForModeration || message.content });
             }
 
-            if (antiSwearEnabled && !isServerOwner && !isAdministrator && !isWhitelisted) {
+            if (antiSwearEnabledHere && !isServerOwner && !isAdministrator && !isWhitelisted) {
                 const detection = detectProfanitySimple(textForModeration || message.content, {
                     extraTerms: Array.isArray(modSettings?.customBlacklist) ? modSettings.customBlacklist : [],
                     whitelist: Array.isArray(modSettings?.antiSwearWhitelist) ? modSettings.antiSwearWhitelist : []

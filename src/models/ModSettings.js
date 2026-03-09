@@ -11,6 +11,8 @@ const modSettingsSchema = new mongoose.Schema({
     whitelistRoles: { type: [String], default: [] },
     whitelistChannels: { type: [String], default: [] },
     customBlacklist: { type: [String], default: [] },
+    antiSwearEnabled: { type: Boolean, default: true },
+    antiSwearDisabledChannels: { type: [String], default: [] },
     antiSwearWhitelist: { type: [String], default: [] },
     antiSwearThreshold: { type: Number, default: 5 },
     verificationPanelChannelId: { type: String, default: null },

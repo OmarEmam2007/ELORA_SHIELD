@@ -48,14 +48,15 @@ module.exports = {
             }
 
             const antiSwearEnabled = modSettings?.antiSwearEnabled !== false;
-            if (!antiSwearEnabled) return;
+            const disabledChannels = Array.isArray(modSettings?.antiSwearDisabledChannels) ? modSettings.antiSwearDisabledChannels : [];
+            const channelId = newMessage.channelId || oldMessage.channelId;
+            const antiSwearEnabledHere = antiSwearEnabled && (!channelId || !disabledChannels.includes(channelId));
+            if (!antiSwearEnabledHere) return;
 
             // Anti-swear is independent from other moderation toggles.
             const isModLiteEnabled = true;
             const whitelistRoles = Array.isArray(modSettings?.whitelistRoles) ? modSettings.whitelistRoles : [];
             const whitelistChannels = Array.isArray(modSettings?.whitelistChannels) ? modSettings.whitelistChannels : [];
-
-            const channelId = newMessage.channelId || oldMessage.channelId;
             const isWhitelisted = Boolean(
                 (channelId && whitelistChannels.includes(channelId)) ||
                 (member?.roles?.cache && whitelistRoles.some(r => member.roles.cache.has(r)))
