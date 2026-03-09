@@ -66,7 +66,7 @@ async function applyMutedOverwrites(guild, mutedRole, reason) {
                     { reason }
                 );
             }
-        } catch (_) {
+        } catch (e) {
             // ignore per-channel permission errors
         }
     }
@@ -108,7 +108,13 @@ module.exports = {
                 return message.reply(`${ERROR_EMOJI} **ᴛʜɪꜱ ᴜꜱᴇʀ ɪꜱ ᴀʟʀᴇᴀᴅʏ ᴍᴜᴛᴇᴅ.**`);
             }
 
-            await target.roles.add(mutedRole, `Muted by ${message.author.tag}`);
+            try {
+                const freshTarget = await message.guild.members.fetch(target.id).catch(() => target);
+                await freshTarget.roles.add(mutedRole, `Muted by ${message.author.tag}`);
+            } catch (e) {
+                console.error('[MUTE] failed adding role:', e);
+                return message.reply(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ᴀᴅᴅ ᴛʜᴇ ᴍᴜᴛᴇ ʀᴏʟᴇ (ʜɪᴇʀᴀʀᴄʜʏ/ᴘᴇʀᴍꜱ).**`);
+            }
             return message.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ, ${target} ʜᴀꜱ ʙᴇᴇɴ ᴍᴜᴛᴇᴅ.**`);
         } catch (e) {
             console.error('[MUTE] error:', e);
