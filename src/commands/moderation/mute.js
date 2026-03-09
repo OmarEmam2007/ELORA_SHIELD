@@ -3,6 +3,7 @@ const { PermissionFlagsBits, ChannelType } = require('discord.js');
 const DONE_EMOJI = '<:555:1479967165619634348>';
 const ERROR_EMOJI = '<:661071whitex:1479988133704761515>';
 const MUTED_ROLE_NAME = 'ᴍᴜᴛᴇᴅ';
+const { canActOnTarget } = require('../../utils/moderationHierarchy');
 
 async function ensureMutedRole(guild) {
     const existing = guild.roles.cache.find(r => r && r.name === MUTED_ROLE_NAME) || null;
@@ -91,6 +92,11 @@ module.exports = {
         const target = message.mentions.members.first();
         if (!target) {
             return message.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴍ @ᴜꜱᴇʀ**`);
+        }
+
+        const hierarchy = canActOnTarget({ guild: message.guild, invokerMember: message.member, targetMember: target });
+        if (!hierarchy.ok) {
+            return message.reply(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ᴍᴜᴛᴇ ᴛʜɪꜱ ᴜꜱᴇʀ (ʜɪɢʜᴇʀ ᴏʀ ᴇQᴜᴀʟ ʀᴏʟᴇ).**`);
         }
 
         // Role hierarchy safety

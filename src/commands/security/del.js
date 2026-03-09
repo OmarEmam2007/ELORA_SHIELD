@@ -2,6 +2,7 @@ const { PermissionFlagsBits } = require('discord.js');
 
 const DONE_EMOJI = '<:555:1479967165619634348>';
 const ERROR_EMOJI = '<:661071whitex:1479988133704761515>';
+const { canActOnTarget } = require('../../utils/moderationHierarchy');
 
 const SMALL_CAPS_MAP = {
     'ᴀ': 'a', 'ʙ': 'b', 'ᴄ': 'c', 'ᴅ': 'd', 'ᴇ': 'e', 'ꜰ': 'f', 'ғ': 'f',
@@ -65,6 +66,11 @@ module.exports = {
         const targetMember = message.mentions.members.first();
         if (!targetMember) {
             return message.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴅᴇʟ ʀᴏʟᴇ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
+        }
+
+        const hierarchy = canActOnTarget({ guild: message.guild, invokerMember: message.member, targetMember: targetMember });
+        if (!hierarchy.ok) {
+            return message.reply(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ʀᴇᴍᴏᴠᴇ ʀᴏʟᴇꜱ ꜰʀᴏᴍ ᴛʜɪꜱ ᴜꜱᴇʀ.**`);
         }
 
         const roleQuery = args.slice(2).join(' ').trim();

@@ -2,6 +2,7 @@ const User = require('../../models/User');
  
 const DONE_EMOJI = '<:555:1479967165619634348>';
 const ERROR_EMOJI = '<:661071whitex:1479988133704761515>';
+const { canActOnTarget } = require('../../utils/moderationHierarchy');
 
 const MODERATOR_ROLE = '1467467348595314740';
 const ADMIN_ROLE = '1467466915902394461';
@@ -31,6 +32,11 @@ module.exports = {
         const targetMember = await message.guild.members.fetch(targetUser.id).catch(() => null);
         if (!targetMember) {
             return message.reply(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ ɪɴ ᴛʜɪꜱ ꜱᴇʀᴠᴇʀ.**`);
+        }
+
+        const hierarchy = canActOnTarget({ guild: message.guild, invokerMember: message.member, targetMember: targetMember });
+        if (!hierarchy.ok) {
+            return message.reply(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ᴊᴀɪʟ ᴛʜɪꜱ ᴜꜱᴇʀ.**`);
         }
 
         const jailedRole = message.guild.roles.cache.get(JAILED_ROLE);

@@ -1,5 +1,6 @@
 const { PermissionFlagsBits } = require('discord.js');
 const NicknameLock = require('../../models/NicknameLock');
+const { canActOnTarget } = require('../../utils/moderationHierarchy');
 
 const DONE_EMOJI = '<:555:1479967165619634348>';
 const ERROR_EMOJI = '<:661071whitex:1479988133704761515>';
@@ -27,6 +28,13 @@ module.exports = {
         const hasOwnerRole = message.member?.roles?.cache?.has(OWNER_ROLE_ID);
         const isOwnerId = client?.config?.ownerId && message.author.id === client.config.ownerId;
         const isOwner = hasOwnerRole || isOwnerId;
+
+        if (target.id !== message.author.id) {
+            const hierarchy = canActOnTarget({ guild: message.guild, invokerMember: message.member, targetMember: target });
+            if (!hierarchy.ok) {
+                return message.reply(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ᴄʜᴀɴɢᴇ ᴛʜɪꜱ ɴɪᴄᴋɴᴀᴍᴇ.**`);
+            }
+        }
 
         if (target.id === message.author.id && !isOwner) {
             const lock = await NicknameLock.findOne({ guildId: message.guild.id, userId: target.id, locked: true }).catch(() => null);

@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const THEME = require('../../utils/theme');
 const { buildAssetAttachment } = require('../../utils/responseAssets');
+const { canActOnTarget } = require('../../utils/moderationHierarchy');
 
 const DONE_EMOJI = '<:555:1479967165619634348>';
 const ERROR_EMOJI = '<:661071whitex:1479988133704761515>';
@@ -67,6 +68,17 @@ module.exports = {
         const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
         if (!member) {
             return interaction.reply(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɪꜱ ɴᴏᴛ ɪɴ ᴛʜɪꜱ ꜱᴇʀᴠᴇʀ.**`);
+        }
+
+        const hierarchy = canActOnTarget({ guild: interaction.guild, invokerMember: interaction.member, targetMember: member });
+        if (!hierarchy.ok) {
+            if (isSlash) {
+                const err = new EmbedBuilder().setColor(THEME.COLORS.ERROR).setDescription('⛔ You cannot timeout this user (higher or equal role).');
+                const badAsset = buildAssetAttachment('wrong');
+                if (badAsset?.url) err.setImage(badAsset.url);
+                return interaction.reply({ embeds: [err], files: badAsset?.attachment ? [badAsset.attachment] : [], ephemeral: true });
+            }
+            return interaction.reply(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ᴛɪᴍᴇᴏᴜᴛ ᴛʜɪꜱ ᴜꜱᴇʀ.**`);
         }
 
         const SPECIAL_EXECUTOR_ID = '1380794290350981130';
