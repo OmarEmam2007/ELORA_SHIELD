@@ -121,17 +121,44 @@ module.exports = {
         const logChannel = await getGuildLogChannel(oldMessage.guild, client);
         if (!logChannel) return;
 
-        const embed = new EmbedBuilder()
-            .setTitle('📝 Message Edited')
-            .addFields(
-                { name: 'Author', value: `${oldMessage.author.tag}`, inline: true },
-                { name: 'Channel', value: `${oldMessage.channel}`, inline: true },
-                { name: 'Before', value: oldMessage.content || '[No Content]' },
-                { name: 'After', value: newMessage.content || '[No Content]' }
-            )
-            .setColor(client.config.colors.info)
-            .setTimestamp();
+        const beforeText = String(oldMessage.content || '');
+        const afterText = String(newMessage.content || '');
+        const createdTs = oldMessage.createdTimestamp ? `<t:${Math.floor(oldMessage.createdTimestamp / 1000)}:F>` : 'Unknown';
+        const editedTs = newMessage.editedTimestamp ? `<t:${Math.floor(newMessage.editedTimestamp / 1000)}:F>` : 'Now';
+        const jump = (newMessage.url || oldMessage.url) ? `[Jump](${newMessage.url || oldMessage.url})` : 'N/A';
 
-        logChannel.send({ embeds: [embed] });
+        const embed = THEME.makeEmbed(EmbedBuilder, 'ACCENT')
+            .setTitle('📝 Message Edited')
+            .setAuthor({ name: oldMessage.author.tag, iconURL: oldMessage.author.displayAvatarURL({ dynamic: true }) })
+            .addFields(
+                { name: 'User', value: `${oldMessage.author} (\`${oldMessage.author.id}\`)`, inline: true },
+                { name: 'Channel', value: `${oldMessage.channel} (\`${oldMessage.channelId}\`)`, inline: true },
+                { name: 'Message ID', value: `\`${oldMessage.id}\``, inline: true },
+                { name: 'Created', value: createdTs, inline: true },
+                { name: 'Edited', value: editedTs, inline: true },
+                { name: 'Link', value: jump, inline: true },
+                { name: 'Before', value: `\`\`\`\n${beforeText.slice(0, 900) || '[No Content]'}\n\`\`\``, inline: false },
+                { name: 'After', value: `\`\`\`\n${afterText.slice(0, 900) || '[No Content]'}\n\`\`\``, inline: false }
+            );
+
+        // Attachment diff (best-effort)
+        const oldAtt = oldMessage.attachments ? [...oldMessage.attachments.values()] : [];
+        const newAtt = newMessage.attachments ? [...newMessage.attachments.values()] : [];
+        if (oldAtt.length || newAtt.length) {
+            embed.addFields({
+                name: 'Attachments',
+                value: `Before: ${oldAtt.map(a => a?.name ? `\`${a.name}\`` : '`file`').join(', ') || 'None'}\nAfter: ${newAtt.map(a => a?.name ? `\`${a.name}\`` : '`file`').join(', ') || 'None'}`.slice(0, 1024),
+                inline: false
+            });
+
+            const first = newAtt[0];
+            const firstUrl = first?.url || first?.proxyURL;
+            const isImage = first?.contentType ? String(first.contentType).startsWith('image/') : (firstUrl ? /\.(png|jpe?g|gif|webp)$/i.test(firstUrl) : false);
+            if (isImage && firstUrl) {
+                embed.setImage(firstUrl);
+            }
+        }
+
+        await logChannel.send({ embeds: [embed] }).catch(() => null);
     },
 };
