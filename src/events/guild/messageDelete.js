@@ -1,4 +1,4 @@
-const { EmbedBuilder, AuditLogEvent } = require('discord.js');
+const { EmbedBuilder, AuditLogEvent, PermissionFlagsBits } = require('discord.js');
 const THEME = require('../../utils/theme');
 const { getGuildLogChannel } = require('../../utils/getGuildLogChannel');
 
@@ -23,8 +23,8 @@ module.exports = {
             if (!logChannel) return;
 
             // Best-effort: who deleted the message?
-            let executorTag = null;
             let executorId = null;
+            let deletedByValue = 'Unknown';
             try {
                 const me = message.guild.members.me;
                 if (me?.permissions?.has?.(PermissionFlagsBits.ViewAuditLog)) {
@@ -38,9 +38,14 @@ module.exports = {
                     }) || null;
 
                     if (entry?.executor) {
-                        executorTag = entry.executor.tag;
                         executorId = entry.executor.id;
                     }
+                    // If no executor entry was found, it's often a self-delete or too-old audit entry.
+                    deletedByValue = executorId
+                        ? `<@${executorId}> (\`${executorId}\`)`
+                        : `${message.author} (\`${message.author.id}\`) [Self / Not In Audit]`;
+                } else {
+                    deletedByValue = `${message.author} (\`${message.author.id}\`) [Missing Audit Access]`;
                 }
             } catch (_) { }
 
@@ -58,7 +63,7 @@ module.exports = {
                     { name: 'Created', value: createdTs, inline: true },
                     {
                         name: 'Deleted By',
-                        value: executorId ? `<@${executorId}> (\`${executorId}\`)` : 'Unknown / Self / Missing Audit Access',
+                        value: deletedByValue,
                         inline: true
                     },
                     { name: 'Content', value: `\`\`\`\n${content}\n\`\`\``, inline: false }
