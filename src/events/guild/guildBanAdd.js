@@ -4,10 +4,10 @@ const THEME = require('../../utils/theme');
 const { getGuildLogChannel } = require('../../utils/getGuildLogChannel');
 
 module.exports = {
-    name: 'guildMemberRemove',
-    async execute(member, client) {
+    name: 'guildBanAdd',
+    async execute(ban, client) {
         try {
-            const guild = member.guild;
+            const { guild, user } = ban;
             
             // Log Channel
             const logChannel = await getGuildLogChannel(guild, client);
@@ -15,35 +15,31 @@ module.exports = {
 
             if (!logChannel && (!banLogChannel || !banLogChannel.isTextBased())) return;
 
-            // Check if it was a kick
+            // Fetch Audit Log
             let executor = null;
-            let reason = 'No reason provided';
-            let isKick = false;
+            let reason = ban.reason || 'No reason provided';
 
             try {
                 const me = guild.members.me;
                 if (me?.permissions?.has(PermissionFlagsBits.ViewAuditLog)) {
                     const auditLogs = await guild.fetchAuditLogs({
                         limit: 1,
-                        type: AuditLogEvent.MemberKick
+                        type: AuditLogEvent.MemberBanAdd
                     });
                     const entry = auditLogs.entries.first();
-                    if (entry && entry.target.id === member.id && (Date.now() - entry.createdTimestamp < 10000)) {
+                    if (entry && entry.target.id === user.id && (Date.now() - entry.createdTimestamp < 10000)) {
                         executor = entry.executor;
                         reason = entry.reason || reason;
-                        isKick = true;
                     }
                 }
             } catch (e) {}
 
-            if (!isKick) return; // We only care about kicks here, leaves are handled elsewhere or ignored as per request
-
-            const embed = THEME.makeEmbed(EmbedBuilder, 'WARNING')
-                .setTitle('👞 Member Kicked')
-                .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
+            const embed = THEME.makeEmbed(EmbedBuilder, 'ERROR')
+                .setTitle('🔨 Member Banned')
+                .setThumbnail(user.displayAvatarURL({ dynamic: true }))
                 .addFields(
-                    { name: 'User', value: `${member.user} (\`${member.id}\`)`, inline: true },
-                    { name: 'Kicked By', value: executor ? `${executor} (\`${executor.id}\`)` : 'Unknown', inline: true },
+                    { name: 'User', value: `${user} (\`${user.id}\`)`, inline: true },
+                    { name: 'Banned By', value: executor ? `${executor} (\`${executor.id}\`)` : 'Unknown', inline: true },
                     { name: 'Reason', value: `\`\`\`${reason}\`\`\``, inline: false }
                 )
                 .setTimestamp();
@@ -53,7 +49,7 @@ module.exports = {
                 await banLogChannel.send({ embeds: [embed] }).catch(() => null);
             }
         } catch (e) {
-            console.error('Error in guildMemberRemove (kick) log:', e);
+            console.error('Error in guildBanAdd log:', e);
         }
     }
 };

@@ -3,6 +3,7 @@ const { getGuildLogChannel } = require('../../utils/getGuildLogChannel');
 const ModSettings = require('../../models/ModSettings');
 const { detectProfanitySimple } = require('../../utils/moderation/coreDetector');
 const THEME = require('../../utils/theme');
+const { CHANNELS } = require('../../utils/logConfig');
 
 module.exports = {
     name: 'messageUpdate',
@@ -119,7 +120,9 @@ module.exports = {
         }
 
         const logChannel = await getGuildLogChannel(oldMessage.guild, client);
-        if (!logChannel) return;
+        
+        // --- New Messages Log System ---
+        const newLogChannel = await oldMessage.guild.channels.fetch(CHANNELS.MESSAGES).catch(() => null);
 
         const beforeText = String(oldMessage.content || '');
         const afterText = String(newMessage.content || '');
@@ -159,6 +162,13 @@ module.exports = {
             }
         }
 
-        await logChannel.send({ embeds: [embed] }).catch(() => null);
+        if (logChannel) {
+            await logChannel.send({ embeds: [embed] }).catch(() => null);
+        }
+
+        // Send to new messages log channel if it exists
+        if (newLogChannel && newLogChannel.isTextBased() && (!logChannel || newLogChannel.id !== logChannel.id)) {
+            await newLogChannel.send({ embeds: [embed] }).catch(() => null);
+        }
     },
 };

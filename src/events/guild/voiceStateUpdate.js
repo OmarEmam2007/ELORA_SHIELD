@@ -1,6 +1,7 @@
 const User = require('../../models/User');
 const { EmbedBuilder } = require('discord.js');
 const { getGuildLogChannel } = require('../../utils/getGuildLogChannel');
+const { CHANNELS } = require('../../utils/logConfig');
 
 module.exports = {
     name: 'voiceStateUpdate',
@@ -23,9 +24,11 @@ module.exports = {
                 const newCh = newState.channel;
                 if (oldCh?.id !== newCh?.id) {
                     const logChannel = await getGuildLogChannel(guild, client);
-                    if (logChannel) {
+                    const vcLogChannel = await guild.channels.fetch(CHANNELS.VC).catch(() => null);
+
+                    if (logChannel || vcLogChannel) {
                         let title = '🔊 Voice State Updated';
-                        const fields = [{ name: 'User', value: `${member.user.tag} (\`${member.id}\`)`, inline: true }];
+                        const fields = [{ name: 'User', value: `${member.user} (\`${member.id}\`)`, inline: true }];
 
                         if (!oldCh && newCh) {
                             title = '🔊 Voice Joined';
@@ -42,10 +45,16 @@ module.exports = {
                         const embed = new EmbedBuilder()
                             .setTitle(title)
                             .setColor(client?.config?.colors?.info || '#5865F2')
+                            .setAuthor({ name: member.user.tag, iconURL: member.user.displayAvatarURL({ dynamic: true }) })
                             .addFields(fields)
                             .setTimestamp();
 
-                        await logChannel.send({ embeds: [embed] }).catch(() => { });
+                        if (logChannel) {
+                            await logChannel.send({ embeds: [embed] }).catch(() => { });
+                        }
+                        if (vcLogChannel && vcLogChannel.isTextBased() && (!logChannel || vcLogChannel.id !== logChannel.id)) {
+                            await vcLogChannel.send({ embeds: [embed] }).catch(() => { });
+                        }
                     }
                 }
             } catch (_) {

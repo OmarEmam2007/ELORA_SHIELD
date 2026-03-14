@@ -1,6 +1,7 @@
 const { EmbedBuilder, AuditLogEvent, PermissionFlagsBits } = require('discord.js');
 const THEME = require('../../utils/theme');
 const { getGuildLogChannel } = require('../../utils/getGuildLogChannel');
+const { CHANNELS } = require('../../utils/logConfig');
 
 module.exports = {
     name: 'messageDelete',
@@ -21,6 +22,13 @@ module.exports = {
 
             const logChannel = await getGuildLogChannel(message.guild, client);
             if (!logChannel) return;
+
+            // --- New Messages Log System ---
+            const newLogChannel = await message.guild.channels.fetch(CHANNELS.MESSAGES).catch(() => null);
+            if (newLogChannel && newLogChannel.isTextBased()) {
+                // We'll reuse the logic below to send to both if needed, 
+                // but for now let's prepare the embed for the new channel.
+            }
 
             // Best-effort: who deleted the message?
             let executorId = null;
@@ -100,6 +108,11 @@ module.exports = {
             }
 
             await logChannel.send({ embeds: [embed], files: files.length ? files : undefined }).catch(() => null);
+
+            // Send to new messages log channel if it exists
+            if (newLogChannel && newLogChannel.isTextBased() && newLogChannel.id !== logChannel.id) {
+                await newLogChannel.send({ embeds: [embed], files: files.length ? files : undefined }).catch(() => null);
+            }
         } catch (e) {
             // ignore
         }
