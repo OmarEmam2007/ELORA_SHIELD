@@ -13,32 +13,40 @@ module.exports = {
             if (!guild) return;
 
             // --- Nickname Changes Log ---
-            if (oldMember.nickname !== newMember.nickname) {
+            const oldNick = oldMember.nickname || oldMember.user.username;
+            const newNick = newMember.nickname || newMember.user.username;
+
+            if (oldNick !== newNick) {
                 const nickLogChannel = await guild.channels.fetch(CHANNELS.NICKNAME).catch(() => null);
                 if (nickLogChannel && nickLogChannel.isTextBased()) {
                     let executor = null;
                     try {
-                        if (guild.members.me?.permissions.has(PermissionFlagsBits.ViewAuditLog)) {
-                            const auditLogs = await guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.MemberUpdate });
-                            const entry = auditLogs.entries.first();
-                            if (entry && entry.target.id === newMember.id && entry.changes.some(c => c.key === 'nick')) {
-                                executor = entry.executor;
-                            }
+                        const me = guild.members.me;
+                        if (me?.permissions.has(PermissionFlagsBits.ViewAuditLog)) {
+                            const auditLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.MemberUpdate });
+                            const entry = auditLogs.entries.find(e => 
+                                e.target.id === newMember.id && 
+                                e.changes.some(c => c.key === 'nick') &&
+                                (Date.now() - e.createdTimestamp < 10000)
+                            );
+                            if (entry) executor = entry.executor;
                         }
-                    } catch (e) {}
+                    } catch (e) {
+                        console.error('Audit log fetch error (nickname):', e);
+                    }
 
                     const embed = THEME.makeEmbed(EmbedBuilder, 'ACCENT')
                         .setTitle('📝 Nickname Changed')
                         .setAuthor({ name: newMember.user.tag, iconURL: newMember.user.displayAvatarURL({ dynamic: true }) })
                         .addFields(
                             { name: 'User', value: `${newMember.user} (\`${newMember.id}\`)`, inline: true },
-                            { name: 'Changed By', value: executor ? `${executor} (\`${executor.id}\`)` : 'Self / Unknown', inline: true },
-                            { name: 'Old Nickname', value: `\`${oldMember.nickname || 'None'}\``, inline: true },
-                            { name: 'New Nickname', value: `\`${newMember.nickname || 'None'}\``, inline: true }
+                            { name: 'Changed By', value: executor ? `${executor} (\`${executor.id}\`)` : (executor === null ? 'Self' : 'Unknown'), inline: true },
+                            { name: 'Old Nickname', value: `\`${oldNick}\``, inline: true },
+                            { name: 'New Nickname', value: `\`${newNick}\``, inline: true }
                         )
                         .setTimestamp();
 
-                    await nickLogChannel.send({ embeds: [embed] }).catch(() => null);
+                    await nickLogChannel.send({ embeds: [embed] }).catch(err => console.error('Failed to send nickname log:', err));
                 }
 
                 // Existing Nickname Lock enforcement logic
