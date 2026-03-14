@@ -1,5 +1,4 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
-const { generateLore } = require('../../nexus/gemini');
 const path = require('path');
 const InviteStats = require('../../models/InviteStats');
 const THEME = require('../../utils/theme');

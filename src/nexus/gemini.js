@@ -1,10 +1,19 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+let GoogleGenerativeAI = null;
+try {
+    ({ GoogleGenerativeAI } = require('@google/generative-ai'));
+} catch (_) {
+    GoogleGenerativeAI = null;
+}
 
-// Use the API Key from env
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-// NOTE: Some free keys / regions may not see newer models. If the remote model fails,
-// we fall back to a local riddle pool so gameplay still feels dynamic.
-const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+let model = null;
+try {
+    if (GoogleGenerativeAI && process.env.GEMINI_API_KEY) {
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    }
+} catch (_) {
+    model = null;
+}
 
 /**
  * Generates a Mythical Title and Backstory for a user based on their profile.
@@ -14,6 +23,13 @@ const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
  */
 async function generateLore(username, avatarUrl) {
     try {
+        if (!model) {
+            return {
+                title: "The Unknown Traveler",
+                lore: "A mysterious figure whose records are encrypted beyond recognization.",
+                visualPrompt: "mysterious hooded cyberpunk figure, glitch art, dark background"
+            };
+        }
         const prompt = `
         You are the "Sovereign Nexus", a sentient digital entity.
         A new soul named "${username}" has entered your realm.
@@ -61,6 +77,9 @@ async function generateLore(username, avatarUrl) {
  */
 async function generateChronicle(messages) {
     try {
+        if (!model) {
+            return "The mists of time obscure the recent events...";
+        }
         const history = messages.join('\n');
         const prompt = `
         You are the Chronicler of the Sovereign Nexus.
@@ -168,6 +187,15 @@ function getNextFallbackRiddle() {
  */
 async function generateHeistRiddle() {
     try {
+        if (!model) {
+            const pick = getNextFallbackRiddle();
+            return {
+                challenge: pick.challenge,
+                solution_keywords: pick.solution_keywords.map(k => k.toLowerCase().trim()),
+                success_story: pick.success_story,
+                failure_mockery: pick.failure_mockery
+            };
+        }
         const prompt = `
 You are the Sovereign Nexus, an ancient cybernetic oracle that guards a digital moon-vault.
 Generate a short, intense Cyberpunk/Mystic riddle that a heist crew must solve in a Discord text channel.
