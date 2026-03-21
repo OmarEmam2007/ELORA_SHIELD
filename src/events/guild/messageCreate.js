@@ -118,6 +118,7 @@ module.exports = {
                 const whitelistRoles = Array.isArray(modSettings?.whitelistRoles) ? modSettings.whitelistRoles : [];
                 const whitelistChannels = Array.isArray(modSettings?.whitelistChannels) ? modSettings.whitelistChannels : [];
                 const isWhitelisted = Boolean(
+                    message.channelId === '1475546263977066606' ||
                     (message.channelId && whitelistChannels.includes(message.channelId)) ||
                     (message.member?.roles?.cache && whitelistRoles.some(r => message.member.roles.cache.has(r)))
                 );
