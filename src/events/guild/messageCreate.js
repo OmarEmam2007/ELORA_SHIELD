@@ -7,10 +7,207 @@ const THEME = require('../../utils/theme');
 const { getGuildLogChannel } = require('../../utils/getGuildLogChannel');
 const { handlePrefixCommand } = require('../../handlers/prefixCommandHandler');
 
+ const ELORA_CYBERSHIELD_FEED_URL = 'https://phish.sinking.yachts/v2/all';
+ const ELORA_CYBERSHIELD_REFRESH_MS = 6 * 60 * 60 * 1000;
+ const ELORA_CYBERSHIELD_TIMEOUT_MS = 24 * 60 * 60 * 1000;
+ const ELORA_CYBERSHIELD_LOG_CHANNEL_ID = process.env.ELORA_SECURITY_LOG_CHANNEL_ID || null;
+
+ let eloraBadDomains = new Set();
+ let eloraCyberShieldStarted = false;
+
+ function eloraNormalizeHost(host) {
+     const h = String(host || '').trim().toLowerCase();
+     if (!h) return null;
+     const trimmed = h.replace(/^\.+|\.+$/g, '');
+     const noWww = trimmed.startsWith('www.') ? trimmed.slice(4) : trimmed;
+     return noWww.split(':')[0];
+ }
+
+ function eloraDefangDomain(domain) {
+     return String(domain || '').replace(/\./g, '[.]');
+ }
+
+ function eloraHostMatchesBadSet(host) {
+     const normalized = eloraNormalizeHost(host);
+     if (!normalized) return null;
+
+     if (eloraBadDomains.has(normalized)) return normalized;
+
+     const parts = normalized.split('.').filter(Boolean);
+     if (parts.length < 2) return null;
+
+     for (let i = 1; i < parts.length - 1; i++) {
+         const suffix = parts.slice(i).join('.');
+         if (eloraBadDomains.has(suffix)) return suffix;
+     }
+
+     return null;
+ }
+
+ function eloraExtractHostsFromMessage(content) {
+     const text = String(content || '');
+     if (!text) return [];
+
+     const hosts = new Set();
+
+     const urlRegex = /https?:\/\/[^\s<>()]+/gi;
+     const urlMatches = text.match(urlRegex) || [];
+     for (const raw of urlMatches) {
+         try {
+             const u = new URL(raw);
+             const host = eloraNormalizeHost(u.hostname);
+             if (host) hosts.add(host);
+         } catch (_) {}
+     }
+
+     const domainRegex = /\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b/gi;
+     const domainMatches = text.match(domainRegex) || [];
+     for (const raw of domainMatches) {
+         const host = eloraNormalizeHost(raw);
+         if (host) hosts.add(host);
+     }
+
+     return Array.from(hosts);
+ }
+
+ async function eloraFetchBadDomainSet() {
+     const res = await fetch(ELORA_CYBERSHIELD_FEED_URL, {
+         method: 'GET',
+         headers: { accept: 'application/json' }
+     });
+
+     if (!res.ok) throw new Error(`CyberShield feed HTTP ${res.status}`);
+
+     const json = await res.json();
+     const next = new Set();
+
+     if (Array.isArray(json)) {
+         for (const item of json) {
+             if (typeof item === 'string') {
+                 const host = eloraNormalizeHost(item);
+                 if (host) next.add(host);
+             } else if (item && typeof item === 'object') {
+                 const d = eloraNormalizeHost(item.domain || item.host || item.hostname);
+                 if (d) next.add(d);
+             }
+         }
+     } else if (json && typeof json === 'object') {
+         const arr = json.domains || json.data || json.blacklist || [];
+         if (Array.isArray(arr)) {
+             for (const item of arr) {
+                 const host = eloraNormalizeHost(item);
+                 if (host) next.add(host);
+             }
+         }
+     }
+
+     if (next.size === 0) throw new Error('CyberShield feed parsed but produced empty set');
+
+     eloraBadDomains = next;
+ }
+
+ function eloraStartCyberShieldFeed() {
+     if (eloraCyberShieldStarted) return;
+     eloraCyberShieldStarted = true;
+
+     eloraFetchBadDomainSet().catch((e) => {
+         console.error('[ELORA Cyber-Shield] Initial feed fetch failed:', e);
+     });
+
+     setInterval(() => {
+         eloraFetchBadDomainSet().catch((e) => {
+             console.error('[ELORA Cyber-Shield] Feed refresh failed:', e);
+         });
+     }, ELORA_CYBERSHIELD_REFRESH_MS).unref?.();
+ }
+
+ async function eloraResolveLogChannel(guild, client) {
+     if (!guild) return null;
+     if (ELORA_CYBERSHIELD_LOG_CHANNEL_ID) {
+         const ch = await guild.channels.fetch(ELORA_CYBERSHIELD_LOG_CHANNEL_ID).catch(() => null);
+         if (ch && ch.isTextBased?.()) return ch;
+     }
+     return getGuildLogChannel(guild, client).catch(() => null);
+ }
+
+ function eloraBuildCyberShieldEmbed({ offender, channel, domain }) {
+     const lines = [
+         '```ansi',
+         '\u001b[2;31m[ELORA CYBER-SHIELD]\u001b[0m \u001b[1;31mSCAM LINK NEUTRALIZED\u001b[0m',
+         `Domain: ${eloraDefangDomain(domain)}`,
+         'Status: THREAT REMOVED + USER QUARANTINED',
+         '```'
+     ].join('\n');
+
+     return new EmbedBuilder()
+         .setColor(THEME?.COLORS?.ERROR || '#8B0000')
+         .setTitle('⚠️ SCAM LINK NEUTRALIZED')
+         .setDescription(lines)
+         .addFields(
+             { name: 'Offender', value: `${offender} (\`${offender.id}\`)`, inline: false },
+             { name: 'Channel', value: `${channel} (\`${channel.id}\`)`, inline: false },
+             { name: 'The Malicious Domain', value: `\`${eloraDefangDomain(domain)}\``, inline: false },
+             { name: 'Action Taken', value: 'Message Deleted & User Timed Out for 24h', inline: false },
+         )
+         .setTimestamp();
+ }
+
+ eloraStartCyberShieldFeed();
+
 module.exports = {
     name: 'messageCreate',
     async execute(message, client) {
         if (message.author.bot || !message.guild) return;
+
+         try {
+             const content = String(message.content || '');
+             if (content && eloraBadDomains && eloraBadDomains.size > 0) {
+                 const hosts = eloraExtractHostsFromMessage(content);
+                 if (hosts.length > 0) {
+                     let matched = null;
+                     for (const host of hosts) {
+                         const hit = eloraHostMatchesBadSet(host);
+                         if (hit) {
+                             matched = hit;
+                             break;
+                         }
+                     }
+
+                     if (matched) {
+                         try {
+                             await message.delete().catch(() => null);
+                         } catch (_) {}
+
+                         try {
+                             const member = message.member;
+                             if (member) {
+                                 const me = message.guild.members.me;
+                                 const canModerate = me?.permissions?.has(PermissionFlagsBits.ModerateMembers);
+                                 if (canModerate && member.moderatable) {
+                                     await member.timeout(ELORA_CYBERSHIELD_TIMEOUT_MS, `ELORA Cyber-Shield: scam domain detected (${matched})`).catch(() => null);
+                                 }
+                             }
+                         } catch (e) {
+                             console.error('[ELORA Cyber-Shield] Failed to timeout member:', e);
+                         }
+
+                         try {
+                             const logChannel = await eloraResolveLogChannel(message.guild, client);
+                             if (logChannel) {
+                                 const embed = eloraBuildCyberShieldEmbed({ offender: message.author, channel: message.channel, domain: matched });
+                                 await logChannel.send({ embeds: [embed] }).catch(() => null);
+                             }
+                         } catch (e) {
+                             console.error('[ELORA Cyber-Shield] Failed to log alert:', e);
+                         }
+
+                         return;
+                     }
+                 }
+             }
+         } catch (e) {
+             console.error('[ELORA Cyber-Shield] Scanner error:', e);
+         }
 
         const ANTISWEAR_DEBUG = process.env.ANTISWEAR_DEBUG === '1';
 
