@@ -209,11 +209,10 @@ module.exports = {
              console.error('[ELORA Cyber-Shield] Scanner error:', e);
          }
 
-         // --- حطه / حطيه / اوف (Ban Command) ---
+         // --- حطه / حطيه (Ban Command) ---
          // Format:
          // حطه @mention reason...
          // حطيه @mention reason...
-         // اوف @mention reason...
          // Requirements:
          // - Server owner OR member has BanMembers permission
          // Responses must be fully bold and include specific custom emoji IDs.
@@ -221,14 +220,13 @@ module.exports = {
              const raw = String(message.content || '').trim();
              const parts = raw.split(/\s+/).filter(Boolean);
              const cmd = parts[0];
-             const isBanCmd = cmd === 'حطه' || cmd === 'حطيه' || cmd === 'اوف';
+             const isBanCmd = cmd === 'حطه' || cmd === 'حطيه';
              if (isBanCmd) {
                  const isServerOwner = message.guild?.ownerId === message.author.id;
                  const canBan = message.member?.permissions?.has(PermissionFlagsBits.BanMembers);
                  if (!isServerOwner && !canBan) return;
 
                  const EMOJI_OK = '<:elora:1479538799712276702>';
-                 const EMOJI_AH = '<:elora:1472898123302043719>';
                  const EMOJI_NEED_MENTION = '<:elora:1479539014611505253>';
 
                  const targetMember = message.mentions?.members?.first?.() || null;
@@ -250,11 +248,7 @@ module.exports = {
                  }
 
                  await targetMember.ban({ reason }).catch(() => null);
-                 if (cmd === 'اوف') {
-                     await message.reply({ content: `**اح ${EMOJI_AH}**` }).catch(() => null);
-                 } else {
-                     await message.reply({ content: `**خرج من زوروا يا روحي ${EMOJI_OK}**` }).catch(() => null);
-                 }
+                 await message.reply({ content: `**خرج من زوروا يا روحي ${EMOJI_OK}**` }).catch(() => null);
                  return;
              }
          } catch (e) {
