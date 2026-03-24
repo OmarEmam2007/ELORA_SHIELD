@@ -209,20 +209,26 @@ module.exports = {
              console.error('[ELORA Cyber-Shield] Scanner error:', e);
          }
 
-         // --- لف (Ban Command) ---
+         // --- حطه / حطيه / اوف (Ban Command) ---
          // Format:
-         // لف @mention reason...
+         // حطه @mention reason...
+         // حطيه @mention reason...
+         // اوف @mention reason...
          // Requirements:
          // - Server owner OR member has BanMembers permission
          // Responses must be fully bold and include specific custom emoji IDs.
          try {
              const raw = String(message.content || '').trim();
-             if (raw === 'لف' || raw.startsWith('لف ')) {
+             const parts = raw.split(/\s+/).filter(Boolean);
+             const cmd = parts[0];
+             const isBanCmd = cmd === 'حطه' || cmd === 'حطيه' || cmd === 'اوف';
+             if (isBanCmd) {
                  const isServerOwner = message.guild?.ownerId === message.author.id;
                  const canBan = message.member?.permissions?.has(PermissionFlagsBits.BanMembers);
                  if (!isServerOwner && !canBan) return;
 
                  const EMOJI_OK = '<:elora:1479538799712276702>';
+                 const EMOJI_AH = '<:elora:1472898123302043719>';
                  const EMOJI_NEED_MENTION = '<:elora:1479539014611505253>';
 
                  const targetMember = message.mentions?.members?.first?.() || null;
@@ -232,8 +238,7 @@ module.exports = {
                  }
 
                  // Extract reason: remove the command word and the mention token if present
-                 const parts = raw.split(/\s+/).filter(Boolean);
-                 // parts[0] === 'لف'
+                 // parts[0] is the command word
                  const reasonParts = parts.slice(2);
                  const reason = reasonParts.join(' ').trim() || `Banned by ${message.author.tag}`;
 
@@ -245,7 +250,11 @@ module.exports = {
                  }
 
                  await targetMember.ban({ reason }).catch(() => null);
-                 await message.reply({ content: `**خرج من زوروا يا روحي ${EMOJI_OK}**` }).catch(() => null);
+                 if (cmd === 'اوف') {
+                     await message.reply({ content: `**اح ${EMOJI_AH}**` }).catch(() => null);
+                 } else {
+                     await message.reply({ content: `**خرج من زوروا يا روحي ${EMOJI_OK}**` }).catch(() => null);
+                 }
                  return;
              }
          } catch (e) {
