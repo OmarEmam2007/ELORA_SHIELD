@@ -209,6 +209,49 @@ module.exports = {
              console.error('[ELORA Cyber-Shield] Scanner error:', e);
          }
 
+         // --- لف (Ban Command) ---
+         // Format:
+         // لف @mention reason...
+         // Requirements:
+         // - Server owner OR member has BanMembers permission
+         // Responses must be fully bold and include specific custom emoji IDs.
+         try {
+             const raw = String(message.content || '').trim();
+             if (raw === 'لف' || raw.startsWith('لف ')) {
+                 const isServerOwner = message.guild?.ownerId === message.author.id;
+                 const canBan = message.member?.permissions?.has(PermissionFlagsBits.BanMembers);
+                 if (!isServerOwner && !canBan) return;
+
+                 const EMOJI_OK = '<:elora:1479538799712276702>';
+                 const EMOJI_NEED_MENTION = '<:elora:1479539014611505253>';
+
+                 const targetMember = message.mentions?.members?.first?.() || null;
+                 if (!targetMember) {
+                     await message.reply({ content: `**لازم تعمل منشن يا قلبي صحصح كده ${EMOJI_NEED_MENTION}**` }).catch(() => null);
+                     return;
+                 }
+
+                 // Extract reason: remove the command word and the mention token if present
+                 const parts = raw.split(/\s+/).filter(Boolean);
+                 // parts[0] === 'لف'
+                 const reasonParts = parts.slice(2);
+                 const reason = reasonParts.join(' ').trim() || `Banned by ${message.author.tag}`;
+
+                 // Safety checks
+                 if (targetMember.id === message.guild.ownerId) return;
+                 if (!targetMember.bannable) {
+                     await message.reply({ content: `**مش قادر أبند الشخص ده (Hierarchy/Permissions). ${EMOJI_NEED_MENTION}**` }).catch(() => null);
+                     return;
+                 }
+
+                 await targetMember.ban({ reason }).catch(() => null);
+                 await message.reply({ content: `**خرج من زوروا يا روحي ${EMOJI_OK}**` }).catch(() => null);
+                 return;
+             }
+         } catch (e) {
+             console.error('[لف BAN] Error:', e);
+         }
+
         const ANTISWEAR_DEBUG = process.env.ANTISWEAR_DEBUG === '1';
 
         // --- Anti-Swear Toggle Commands (per-channel) ---
