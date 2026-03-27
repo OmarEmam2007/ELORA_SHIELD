@@ -307,28 +307,6 @@ module.exports = {
             console.error('[ANTISWEAR TOGGLE] Error:', e);
         }
 
-        // --- Language filter: block Arabic in specific channel ---
-        try {
-            if (message.channelId === '1462025794481164461') {
-                const isAdministrator = message.member?.permissions?.has(PermissionFlagsBits.Administrator);
-                if (!isAdministrator) {
-                    const hasArabic = /[\u0600-\u06FF]/.test(String(message.content || ''));
-                    if (hasArabic) {
-                        await message.delete().catch(() => {});
-                        const warn = await message.channel.send({
-                            content: 'Please use the Arabic language channel here: <#1462079159332372480>'
-                        }).catch(() => null);
-                        if (warn) {
-                            setTimeout(() => warn.delete().catch(() => {}), 7000);
-                        }
-                        return;
-                    }
-                }
-            }
-        } catch (e) {
-            console.error('[LANG FILTER] Error:', e);
-        }
-
         // --- Instagram/TikTok Auto-Processing (never delete social links) ---
         try {
             const securityCfg = await GuildSecurityConfig.findOne({ guildId: message.guild.id }).catch(() => null);
