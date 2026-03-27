@@ -177,7 +177,7 @@ function buildAlertEmbed({ offender, channel, domain }) {
 
     return new EmbedBuilder()
         .setColor(THEME?.COLORS?.ERROR || '#8B0000')
-        .setTitle('⚠️ SCAM LINK NEUTRALIZED')
+        .setTitle('⟁ SCAM LINK NEUTRALIZED')
         .setDescription(lines)
         .addFields(
             {

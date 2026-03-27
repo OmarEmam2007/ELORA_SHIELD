@@ -20,7 +20,7 @@ async function loadEvents(client) {
             }
         }
     }
-    console.log('✅ Events Loaded');
+    console.log('✓ Events Loaded');
 }
 
 module.exports = { loadEvents };

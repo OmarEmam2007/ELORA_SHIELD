@@ -24,8 +24,29 @@ const { handlePrefixCommand } = require('../../handlers/prefixCommandHandler');
  }
 
  function eloraDefangDomain(domain) {
-     return String(domain || '').replace(/\./g, '[.]');
- }
+    return String(domain || '').replace(/\./g, '[.]');
+}
+
+function eloraParseHumanDurationToMs(input) {
+    const raw = String(input || '').trim().toLowerCase();
+    if (!raw) return null;
+    const m = raw.match(/^(\d+)([a-z])?$/i);
+    if (!m) return null;
+    const n = Number(m[1]);
+    if (!Number.isFinite(n) || n <= 0) return null;
+    const unit = (m[2] || '').toLowerCase();
+    const minute = 60 * 1000;
+    const hour = 60 * minute;
+    const day = 24 * hour;
+    const week = 7 * day;
+    const month = 30 * day;
+    if (!unit) return n * minute;
+    if (unit === 'h') return n * hour;
+    if (unit === 'd') return n * day;
+    if (unit === 'w') return n * week;
+    if (unit === 'm') return n * month;
+    return null;
+}
 
  function eloraHostMatchesBadSet(host) {
      const normalized = eloraNormalizeHost(host);
@@ -141,7 +162,7 @@ const { handlePrefixCommand } = require('../../handlers/prefixCommandHandler');
 
      return new EmbedBuilder()
          .setColor(THEME?.COLORS?.ERROR || '#8B0000')
-         .setTitle('⚠️ SCAM LINK NEUTRALIZED')
+         .setTitle('⟁ SCAM LINK NEUTRALIZED')
          .setDescription(lines)
          .addFields(
              { name: 'Offender', value: `${offender} (\`${offender.id}\`)`, inline: false },
@@ -255,6 +276,36 @@ module.exports = {
              console.error('[لف BAN] Error:', e);
          }
 
+         try {
+             const raw = String(message.content || '').trim();
+             const parts = raw.split(/\s+/).filter(Boolean);
+             if (parts[0] === 'اخرس') {
+                 const isServerOwner = message.guild?.ownerId === message.author.id;
+                 const canTimeout = message.member?.permissions?.has(PermissionFlagsBits.ModerateMembers);
+                 if (!isServerOwner && !canTimeout) return;
+
+                 const targetMember = message.mentions?.members?.first?.() || null;
+                 const durationToken = parts[2] || '';
+                 const durationMs = eloraParseHumanDurationToMs(durationToken);
+
+                 if (!targetMember || !durationMs) return;
+
+                 const me = message.guild.members.me;
+                 const botCanModerate = me?.permissions?.has(PermissionFlagsBits.ModerateMembers);
+
+                 const maxMs = 28 * 24 * 60 * 60 * 1000;
+
+                 if (targetMember && durationMs && durationMs > 0 && durationMs <= maxMs && botCanModerate && targetMember.moderatable && targetMember.id !== message.guild.ownerId) {
+                     await targetMember.timeout(durationMs, `Muted by ${message.author.tag}`).catch(() => null);
+                 }
+
+                 await message.reply({ content: '**تم**' }).catch(() => null);
+                 return;
+             }
+         } catch (e) {
+             console.error('[اخرس] Error:', e);
+         }
+
         const ANTISWEAR_DEBUG = process.env.ANTISWEAR_DEBUG === '1';
 
         // --- Anti-Swear Toggle Commands (per-channel) ---
@@ -267,7 +318,7 @@ module.exports = {
                 const isServerOwner = message.guild?.ownerId === message.author.id;
                 const isAdministrator = message.member?.permissions?.has(PermissionFlagsBits.Administrator);
                 if (!isServerOwner && !isAdministrator) {
-                    await message.reply({ content: '❌ You need Administrator permission to use this command.' }).catch(() => null);
+                    await message.reply({ content: '**✖ You need Administrator permission to use this command.**' }).catch(() => null);
                     return;
                 }
 
@@ -280,7 +331,7 @@ module.exports = {
                 ).catch(() => null);
 
                 if (!modSettings) {
-                    await message.reply({ content: '❌ Failed to update anti-swear settings (database error).' }).catch(() => null);
+                    await message.reply({ content: '**✖ Failed to update anti-swear settings (database error).**' }).catch(() => null);
                     return;
                 }
 
@@ -291,7 +342,7 @@ module.exports = {
                     disabledSet.add(channelId);
                     modSettings.antiSwearDisabledChannels = Array.from(disabledSet);
                     await modSettings.save().catch(() => null);
-                    await message.reply({ content: '✅ Anti-swear system is now **OFF** in this room.' }).catch(() => null);
+                    await message.reply({ content: '**✓ Anti-swear system is now OFF in this room.**' }).catch(() => null);
                     return;
                 }
 
@@ -299,7 +350,7 @@ module.exports = {
                     disabledSet.delete(channelId);
                     modSettings.antiSwearDisabledChannels = Array.from(disabledSet);
                     await modSettings.save().catch(() => null);
-                    await message.reply({ content: '✅ Anti-swear system is now **ON** in this room.' }).catch(() => null);
+                    await message.reply({ content: '**✓ Anti-swear system is now ON in this room.**' }).catch(() => null);
                     return;
                 }
             }
@@ -351,7 +402,7 @@ module.exports = {
                         await message.delete().catch(() => {});
 
                         const warn = await message.channel.send({
-                            content: `⚠️ ${message.author}, Discord invite links are not allowed in this server.`
+                            content: `**⟁ ${message.author}, Discord invite links are not allowed in this server.**`
                         }).catch(() => null);
                         if (warn) {
                             setTimeout(() => warn.delete().catch(() => {}), 5000);
@@ -366,7 +417,7 @@ module.exports = {
                             await message.delete().catch(() => {});
 
                             const warn = await message.channel.send({
-                                content: `⚠️ ${message.author}, that link looks suspicious and was removed.`
+                                content: `**⟁ ${message.author}, that link looks suspicious and was removed.**`
                             }).catch(() => null);
                             if (warn) {
                                 setTimeout(() => warn.delete().catch(() => {}), 7000);

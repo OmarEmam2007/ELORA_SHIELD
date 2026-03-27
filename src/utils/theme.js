@@ -18,8 +18,8 @@ module.exports = {
         SATELLITE: '🛰️',
         HAMMER: '🔨',
         SHIELD: '🛡️',
-        CHECK: '✅',
-        CROSS: '❌'
+        CHECK: '✓',
+        CROSS: '✖'
     },
 
     // 🎞️ Animation Frames (Moon Phases)

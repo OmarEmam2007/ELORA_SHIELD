@@ -9,7 +9,7 @@ module.exports = {
     async execute(interaction, client) {
         const hasAdministrator = Boolean(interaction.member?.permissions?.has?.(PermissionFlagsBits.Administrator));
         if (!hasAdministrator) {
-            return interaction.reply({ content: '❌ You need **Administrator** permission to use this command.', ephemeral: true }).catch(() => null);
+            return interaction.reply({ content: '**✖ You need Administrator permission to use this command.**', ephemeral: true }).catch(() => null);
         }
 
         await interaction.deferReply({ ephemeral: true });
@@ -17,6 +17,6 @@ module.exports = {
         const dashboard = await generateDashboard(interaction.guildId);
 
         await interaction.channel.send(dashboard);
-        await interaction.editReply('✅ Smart Moderation Dashboard deployed to this channel.');
+        await interaction.editReply('**✓ Smart Moderation Dashboard deployed to this channel.**');
     },
 };

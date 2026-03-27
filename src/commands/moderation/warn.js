@@ -39,7 +39,7 @@ module.exports = {
         const hasModerateMembers = Boolean(memberInvoker?.permissions?.has?.(PermissionFlagsBits.ModerateMembers));
         if (!hasModerateMembers) {
             if (isSlash) {
-                return interaction.reply({ content: '❌ You need **Moderate Members** permission to use this command.', ephemeral: true }).catch(() => null);
+                return interaction.reply({ content: '**✖ You need Moderate Members permission to use this command.**', ephemeral: true }).catch(() => null);
             }
             return interaction.reply(`${ERROR_EMOJI} **You need Moderate Members permission to use this command.**`).catch(() => null);
         }
@@ -151,8 +151,8 @@ module.exports = {
 
             const embed = new EmbedBuilder()
                 .setColor(THEME.COLORS.WARNING)
-                .setTitle(`⚠️ Warnings for ${target.tag}`)
-                .setDescription(desc)
+                .setTitle(`⟁ Warnings for ${target.tag}`)
+                .setDescription(`**${desc}**`)
                 .setFooter(THEME.FOOTER);
 
             return interaction.reply({ embeds: [embed], ephemeral: true });
@@ -162,7 +162,7 @@ module.exports = {
             const target = interaction.options.getUser('target');
             const res = await WarnCase.deleteMany({ guildId: interaction.guildId, userId: target.id }).catch(() => null);
             const deleted = res?.deletedCount || 0;
-            return interaction.reply({ content: `✅ Cleared ${deleted} warning(s) for ${target}.`, ephemeral: true });
+            return interaction.reply({ content: `**✓ Cleared ${deleted} warning(s) for ${target}.**`, ephemeral: true });
         }
 
         if (sub !== 'add') return;
@@ -184,8 +184,8 @@ module.exports = {
 
             const dmEmbed = new EmbedBuilder()
                 .setColor(THEME.COLORS.WARNING)
-                .setTitle(`⚠️ Warning from ${interaction.guild.name}`)
-                .setDescription(`You have received an official warning.\n\n**Reason:** ${reason}\n**Total Warnings:** ${warnCount}`)
+                .setTitle(`⟁ Warning from ${interaction.guild.name}`)
+                .setDescription(`**You have received an official warning.\n\nReason: ${reason}\nTotal Warnings: ${warnCount}**`)
                 .setFooter(THEME.FOOTER)
                 .setTimestamp();
 
@@ -204,15 +204,15 @@ module.exports = {
             const successEmbed = new EmbedBuilder()
                 .setColor(THEME.COLORS.WARNING)
                 .setAuthor({
-                    name: '⚠️ WARNING ISSUED',
+                    name: '⟁ WARNING ISSUED',
                     iconURL: targetUser.displayAvatarURL({ dynamic: true })
                 })
                 .setDescription(
-                    `**Target:** ${targetUser.tag}\n` +
-                    `**Reason:** ${reason}\n` +
-                    `**Moderator:** ${interaction.user}\n` +
-                    `**Total Warnings:** ${warnCount}\n` +
-                    `**Auto Action:** ${timeoutApplied ? '12h timeout applied' : 'None'}`
+                    `**Target: ${targetUser.tag}\n` +
+                    `Reason: ${reason}\n` +
+                    `Moderator: ${interaction.user}\n` +
+                    `Total Warnings: ${warnCount}\n` +
+                    `Auto Action: ${timeoutApplied ? '12h timeout applied' : 'None'}**`
                 )
                 .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))
                 .setTimestamp();
@@ -223,7 +223,7 @@ module.exports = {
             await interaction.editReply({ embeds: [successEmbed], files: okAsset?.attachment ? [okAsset.attachment] : [] });
         } catch (error) {
             console.error(error);
-            const err = new EmbedBuilder().setColor(THEME.COLORS.ERROR).setDescription('❌ Error issuing warning.');
+            const err = new EmbedBuilder().setColor(THEME.COLORS.ERROR).setDescription('**✖ Error issuing warning.**');
             const badAsset = buildAssetAttachment('wrong');
             if (badAsset?.url) err.setImage(badAsset.url);
             await interaction.editReply({ embeds: [err], files: badAsset?.attachment ? [badAsset.attachment] : [] });

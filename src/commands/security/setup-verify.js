@@ -16,7 +16,7 @@ module.exports = {
     async execute(interaction, client) {
         const hasAdministrator = Boolean(interaction.member?.permissions?.has?.(PermissionFlagsBits.Administrator));
         if (!hasAdministrator) {
-            return interaction.reply({ content: '❌ You need **Administrator** permission to use this command.', ephemeral: true }).catch(() => null);
+            return interaction.reply({ content: '**✖ You need Administrator permission to use this command.**', ephemeral: true }).catch(() => null);
         }
 
         const role = interaction.options.getRole('role');
@@ -24,7 +24,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setTitle('🔒 Server Verification')
-            .setDescription('To access the server, please verify yourself by clicking the button below.')
+            .setDescription('**To access the server, please verify yourself by clicking the button below.**')
             .setColor(client.config.colors.primary)
             .setFooter({ text: 'Security Gate' });
 
@@ -34,11 +34,11 @@ module.exports = {
                     .setCustomId(`verify_${role.id}`)
                     .setLabel('Verify Access')
                     .setStyle(ButtonStyle.Success)
-                    .setEmoji('✅')
+                    .setEmoji('✓')
             );
 
         await channel.send({ embeds: [embed], components: [row] });
 
-        await interaction.reply({ content: `✅ Verification system setup in ${channel} with role ${role}.`, ephemeral: true });
+        await interaction.reply({ content: `**✓ Verification system setup in ${channel} with role ${role}.**`, ephemeral: true });
     },
 };

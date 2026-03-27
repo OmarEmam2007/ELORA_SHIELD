@@ -25,13 +25,13 @@ client.config = require('../config.json');
 
 const app = express();
 app.get('/', (req, res) => res.send('ELORA SHIELD is Online'));
-app.listen(process.env.PORT || 7860, () => console.log('✅ Web server ready'));
+app.listen(process.env.PORT || 7860, () => console.log('✓ Web server ready'));
 
 client.once('ready', () => {
     try {
         client.user.setActivity('ELORA SHIELD', { type: ActivityType.Playing });
     } catch (_) {}
-    console.log(`✅ [ELORA SHIELD] Logged in as ${client.user.tag}`);
+    console.log(`✓ [ELORA SHIELD] Logged in as ${client.user.tag}`);
 });
 
 (async () => {
@@ -42,20 +42,20 @@ client.once('ready', () => {
         const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
         if (mongoUri) {
             await mongoose.connect(mongoUri);
-            console.log('✅ MongoDB connected');
+            console.log('✓ MongoDB connected');
         }
 
         await loadCommands(client);
         await loadPrefixCommands(client);
-        console.log('✅ [ELORA SHIELD] Loaded: Moderation Commands');
-        console.log('✅ [ELORA SHIELD] Loaded: Security Commands');
+        console.log('✓ [ELORA SHIELD] Loaded: Moderation Commands');
+        console.log('✓ [ELORA SHIELD] Loaded: Security Commands');
         await loadEvents(client);
         await client.login(token);
     } catch (err) {
-        console.error('❌ [ELORA SHIELD] Startup error:', err);
+        console.error('✖ [ELORA SHIELD] Startup error:', err);
         process.exitCode = 1;
     }
 })();
 
-process.on('unhandledRejection', (reason) => console.error('❌ [Unhandled Rejection]', reason));
-process.on('uncaughtException', (error) => console.error('❌ [Uncaught Exception]', error));
+process.on('unhandledRejection', (reason) => console.error('✖ [Unhandled Rejection]', reason));
+process.on('uncaughtException', (error) => console.error('✖ [Uncaught Exception]', error));

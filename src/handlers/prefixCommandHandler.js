@@ -38,7 +38,7 @@ async function loadPrefixCommands(client) {
         }
     }
     
-    console.log(`✅ [${client.user?.tag || 'Bot'}] Loaded ${client.prefixCommands.size} prefix commands`);
+    console.log(`✓ [${client.user?.tag || 'Bot'}] Loaded ${client.prefixCommands.size} prefix commands`);
 }
 
 async function handlePrefixCommand(message, client) {

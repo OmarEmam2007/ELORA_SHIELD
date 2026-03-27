@@ -14,7 +14,7 @@ module.exports = {
 
         const hasAdministrator = Boolean(interaction.member?.permissions?.has?.(PermissionFlagsBits.Administrator));
         if (!hasAdministrator) {
-            return interaction.reply({ content: '❌ You need **Administrator** permission to use this command.', ephemeral: true }).catch(() => null);
+            return interaction.reply({ content: '**✖ You need Administrator permission to use this command.**', ephemeral: true }).catch(() => null);
         }
 
         // Hybrid input support
@@ -35,7 +35,7 @@ module.exports = {
         }
 
         if (!mainMsg.guildId || !mainMsg.channelId) {
-            return mainMsg.reply({ content: '❌ This command can only be used in a server channel.', ephemeral: true }).catch(() => null);
+            return mainMsg.reply({ content: '**✖ This command can only be used in a server channel.**', ephemeral: true }).catch(() => null);
         }
 
         const guildId = mainMsg.guildId;
@@ -48,7 +48,7 @@ module.exports = {
         ).catch(() => null);
 
         if (!modSettings) {
-            return mainMsg.reply({ content: '❌ Failed to update anti-swear settings (database error).', ephemeral: true }).catch(() => null);
+            return mainMsg.reply({ content: '**✖ Failed to update anti-swear settings (database error).**', ephemeral: true }).catch(() => null);
         }
 
         const disabled = Array.isArray(modSettings.antiSwearDisabledChannels) ? modSettings.antiSwearDisabledChannels : [];
@@ -58,6 +58,6 @@ module.exports = {
         modSettings.antiSwearDisabledChannels = Array.from(disabledSet);
         await modSettings.save().catch(() => null);
 
-        return mainMsg.reply({ content: '✅ Anti-swear system is now **ON** in this room.', ephemeral: true }).catch(() => null);
+        return mainMsg.reply({ content: '**✓ Anti-swear system is now ON in this room.**', ephemeral: true }).catch(() => null);
     }
 };

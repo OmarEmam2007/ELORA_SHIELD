@@ -25,7 +25,7 @@ module.exports = {
         const hasKickMembers = Boolean(memberInvoker?.permissions?.has?.(PermissionFlagsBits.KickMembers));
         if (!hasKickMembers) {
             if (isSlash) {
-                return interaction.reply({ content: '❌ You need **Kick Members** permission to use this command.', ephemeral: true }).catch(() => null);
+                return interaction.reply({ content: '**✖ You need Kick Members permission to use this command.**', ephemeral: true }).catch(() => null);
             }
             return interaction.reply(`${ERROR_EMOJI} **You need Kick Members permission to use this command.**`).catch(() => null);
         }
@@ -71,7 +71,7 @@ module.exports = {
         const hierarchy = canActOnTarget({ guild: mainMsg.guild, invokerMember: mainMsg.member, targetMember: member });
         if (!hierarchy.ok) {
             if (isSlash) {
-                const err = new EmbedBuilder().setColor(THEME.COLORS.ERROR).setDescription('⛔ You cannot kick this user (higher or equal role).');
+                const err = new EmbedBuilder().setColor(THEME.COLORS.ERROR).setDescription('**✖ You cannot kick this user (higher or equal role).**');
                 const badAsset = buildAssetAttachment('wrong');
                 if (badAsset?.url) err.setImage(badAsset.url);
                 return mainMsg.reply({ embeds: [err], files: badAsset?.attachment ? [badAsset.attachment] : [], ephemeral: true });
@@ -92,7 +92,7 @@ module.exports = {
             if (isSlash) {
                 const err = new EmbedBuilder()
                     .setColor(THEME.COLORS.ERROR)
-                    .setDescription(`🚫 **Privilege Error:** Cannot kick **${targetUser.tag}** (Higher Rank).`);
+                    .setDescription(`**✖ Privilege Error: Cannot kick ${targetUser.tag} (Higher Rank).**`);
                 const badAsset = buildAssetAttachment('wrong');
                 if (badAsset?.url) err.setImage(badAsset.url);
                 return interaction.reply({ embeds: [err], files: badAsset?.attachment ? [badAsset.attachment] : [], ephemeral: true });
@@ -102,7 +102,7 @@ module.exports = {
 
         // --- 2. Pseudo-Animation ---
         const frames = [
-            '⚠️ Initiating Removal Protocol...',
+            '**⟁ Initiating Removal Protocol...**',
             '📉 Decreasing Social Credit...',
             '👢 Calibrating Boot...',
             '💨 Execute.'
@@ -118,7 +118,7 @@ module.exports = {
 
             for (let i = 1; i < frames.length; i++) {
                 await new Promise(r => setTimeout(r, 700));
-                const step = new EmbedBuilder().setColor(THEME.COLORS.WARNING).setDescription(`${frames[i]}`);
+                const step = new EmbedBuilder().setColor(THEME.COLORS.WARNING).setDescription(`**${frames[i]}**`);
                 if (loadingAsset?.url) step.setImage(loadingAsset.url);
                 await mainMsg.editReply({ embeds: [step] });
             }
@@ -128,7 +128,7 @@ module.exports = {
         try {
             // DM (prefix must never send embeds; slash can keep its own style)
             if (isSlash) {
-                await targetUser.send(`👢 **Kicked from ${mainMsg.guild.name}**\nReason: ${reason}`).catch(() => { });
+                await targetUser.send(`**👢 Kicked from ${mainMsg.guild.name}\nReason: ${reason}**`).catch(() => { });
             } else {
                 await targetUser.send(
                     `${DONE_EMOJI} **ʏᴏᴜ ʜᴀᴠᴇ ʙᴇᴇɴ ᴋɪᴄᴋᴇᴅ ꜰʀᴏᴍ ${String(mainMsg.guild.name || '').toUpperCase()}.**\n` +
@@ -165,7 +165,7 @@ module.exports = {
             if (isSlash) {
                 const errEmbed = new EmbedBuilder()
                     .setColor(THEME.COLORS.ERROR)
-                    .setDescription('❌ **Error:** Kick sequence failed.');
+                    .setDescription('**✖ Error: Kick sequence failed.**');
 
                 const badAsset = buildAssetAttachment('wrong');
                 if (badAsset?.url) errEmbed.setImage(badAsset.url);

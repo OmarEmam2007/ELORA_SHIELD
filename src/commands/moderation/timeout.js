@@ -26,7 +26,7 @@ module.exports = {
         const hasModerateMembers = Boolean(memberInvoker?.permissions?.has?.(PermissionFlagsBits.ModerateMembers));
         if (!hasModerateMembers) {
             if (isSlash) {
-                return interaction.reply({ content: '❌ You need **Moderate Members** permission to use this command.', ephemeral: true }).catch(() => null);
+                return interaction.reply({ content: '**✖ You need Moderate Members permission to use this command.**', ephemeral: true }).catch(() => null);
             }
             return interaction.reply(`${ERROR_EMOJI} **You need Moderate Members permission to use this command.**`).catch(() => null);
         }
@@ -73,7 +73,7 @@ module.exports = {
         const hierarchy = canActOnTarget({ guild: interaction.guild, invokerMember: interaction.member, targetMember: member });
         if (!hierarchy.ok) {
             if (isSlash) {
-                const err = new EmbedBuilder().setColor(THEME.COLORS.ERROR).setDescription('⛔ You cannot timeout this user (higher or equal role).');
+                const err = new EmbedBuilder().setColor(THEME.COLORS.ERROR).setDescription('**✖ You cannot timeout this user (higher or equal role).**');
                 const badAsset = buildAssetAttachment('wrong');
                 if (badAsset?.url) err.setImage(badAsset.url);
                 return interaction.reply({ embeds: [err], files: badAsset?.attachment ? [badAsset.attachment] : [], ephemeral: true });
@@ -89,7 +89,7 @@ module.exports = {
 
         if (!member.moderatable) {
             if (isSlash) {
-                const err = new EmbedBuilder().setColor(THEME.COLORS.ERROR).setDescription('⛔ Cannot timeout this user (higher role / missing permissions).');
+                const err = new EmbedBuilder().setColor(THEME.COLORS.ERROR).setDescription('**✖ Cannot timeout this user (higher role / missing permissions).**');
                 const badAsset = buildAssetAttachment('wrong');
                 if (badAsset?.url) err.setImage(badAsset.url);
                 return interaction.reply({ embeds: [err], files: badAsset?.attachment ? [badAsset.attachment] : [], ephemeral: true });
@@ -128,7 +128,7 @@ module.exports = {
                 const dmEmbed = new EmbedBuilder()
                     .setColor(THEME.COLORS.WARNING)
                     .setTitle(`🔇 Silenced in ${interaction.guild.name}`)
-                    .setDescription(`You remain in stasis for **${duration} minutes**.\nReason: ${reason}`)
+                    .setDescription(`**You remain in stasis for ${duration} minutes.\nReason: ${reason}**`)
                     .setTimestamp();
                 await targetUser.send({ embeds: [dmEmbed] }).catch(() => { });
             } else {
@@ -146,10 +146,10 @@ module.exports = {
                     iconURL: targetUser.displayAvatarURL({ dynamic: true }) 
                 })
                 .setDescription(
-                    `**Target:** ${targetUser.tag}\n` +
-                    `**Duration:** ${duration} minutes\n` +
-                    `**Reason:** ${reason}\n` +
-                    `**Moderator:** ${user}`
+                    `**Target: ${targetUser.tag}\n` +
+                    `Duration: ${duration} minutes\n` +
+                    `Reason: ${reason}\n` +
+                    `Moderator: ${user}**`
                 )
                 .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))
                 .setTimestamp();
@@ -166,7 +166,7 @@ module.exports = {
         } catch (error) {
             console.error(error);
             if (isSlash) {
-                const err = new EmbedBuilder().setColor(THEME.COLORS.ERROR).setDescription('❌ Stasis field collapse (Error).');
+                const err = new EmbedBuilder().setColor(THEME.COLORS.ERROR).setDescription('**✖ Stasis field collapse (Error).**');
                 const badAsset = buildAssetAttachment('wrong');
                 if (badAsset?.url) err.setImage(badAsset.url);
                 await interaction.editReply({ embeds: [err], files: badAsset?.attachment ? [badAsset.attachment] : [] });

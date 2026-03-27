@@ -31,7 +31,7 @@ module.exports = {
         const hasManageMessages = Boolean(member?.permissions?.has?.(PermissionFlagsBits.ManageMessages));
         if (!hasManageMessages) {
             if (isSlash) {
-                return interaction.reply({ content: '❌ You need **Manage Messages** permission to use this command.', ephemeral: true }).catch(() => null);
+                return interaction.reply({ content: '**✖ You need Manage Messages permission to use this command.**', ephemeral: true }).catch(() => null);
             }
             return interaction.reply(`${ERROR_EMOJI} **You need Manage Messages permission to use this command.**`).catch(() => null);
         }
@@ -77,7 +77,7 @@ module.exports = {
             // --- 2. Pseudo-Animation (Vaporize) ---
             const initEmbed = new EmbedBuilder()
                 .setColor(THEME.COLORS.ACCENT)
-                .setDescription('💥 **Preparing Vaporization Beam...**');
+                .setDescription('**Preparing Vaporization Beam...**');
 
             const loadingAsset = buildAssetAttachment('loading');
             if (loadingAsset?.url) initEmbed.setImage(loadingAsset.url);
@@ -112,7 +112,7 @@ module.exports = {
             if (isSlash) {
                 const successEmbed = new EmbedBuilder()
                     .setColor(THEME.COLORS.SUCCESS)
-                    .setDescription(`💥 **Vaporized ${toDelete.size} messages**`)
+                    .setDescription(`**Vaporized ${toDelete.size} messages**`)
                     .setTimestamp();
 
                 const okAsset = buildAssetAttachment('ok');
@@ -125,7 +125,7 @@ module.exports = {
         } catch (error) {
             console.error(error);
             if (isSlash) {
-                const err = new EmbedBuilder().setColor(THEME.COLORS.ERROR).setDescription('❌ **Error:** Messages too old or missing.');
+                const err = new EmbedBuilder().setColor(THEME.COLORS.ERROR).setDescription('**✖ Error: Messages too old or missing.**');
                 const badAsset = buildAssetAttachment('wrong');
                 if (badAsset?.url) err.setImage(badAsset.url);
                 await mainMsg.editReply({ embeds: [err], files: badAsset?.attachment ? [badAsset.attachment] : [] });

@@ -420,22 +420,6 @@ class MusicService {
         const sent = await channel.send({ embeds: [embed], components });
         s.controllerMessageId = sent.id;
     }
-
-    async handleButton(interaction) {
-        const gId = interaction.guildId;
-        const s = this._getState(gId);
-        if (!s.voiceChannelId) return interaction.reply({ content: '❌ No active session.', ephemeral: true });
-        switch (interaction.customId) {
-            case 'music_toggle': this.togglePause(gId); break;
-            case 'music_skip': this.skip(gId); break;
-            case 'music_stop': this.stop(gId); break;
-            case 'music_loop': this.toggleLoop(gId); break;
-            case 'music_vol_down': this.setVolume(gId, s.volume - 0.1); break;
-            case 'music_vol_up': this.setVolume(gId, s.volume + 0.1); break;
-        }
-        await interaction.deferUpdate().catch(() => { });
-        await this.updateController(gId).catch(() => { });
-    }
 }
 
 module.exports = MusicService;

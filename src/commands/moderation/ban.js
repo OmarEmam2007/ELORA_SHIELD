@@ -26,7 +26,7 @@ module.exports = {
         const hasBanMembers = Boolean(memberInvoker?.permissions?.has?.(PermissionFlagsBits.BanMembers));
         if (!hasBanMembers) {
             if (isSlash) {
-                return interaction.reply({ content: '❌ You need **Ban Members** permission to use this command.', ephemeral: true }).catch(() => null);
+                return interaction.reply({ content: '**✖ You need Ban Members permission to use this command.**', ephemeral: true }).catch(() => null);
             }
             return interaction.reply(`${ERROR_EMOJI} **You need Ban Members permission to use this command.**`).catch(() => null);
         }
@@ -129,7 +129,7 @@ module.exports = {
                     .setColor(THEME.COLORS.ERROR)
                     .setThumbnail(THEME.ICONS.MOON_FULL)
                     .setTitle(`💥 Ejected from ${interaction.guild.name}`)
-                    .setDescription(`You have been exiled to the dark side of the moon.\n\n**Reason:** ${reason}`)
+                    .setDescription(`**You have been exiled to the dark side of the moon.\n\nReason: ${reason}**`)
                     .setTimestamp();
                 await targetUser.send({ embeds: [dmEmbed] }).catch(() => { });
             } else {
@@ -174,7 +174,7 @@ module.exports = {
             if (isSlash) {
                 const errEmbed = new EmbedBuilder()
                     .setColor(THEME.COLORS.ERROR)
-                    .setDescription('❌ **Critical Failure:** Ejection system malfunction.');
+                    .setDescription('**✖ Critical Failure: Ejection system malfunction.**');
 
                 const badAsset = buildAssetAttachment('wrong');
                 if (badAsset?.url) errEmbed.setImage(badAsset.url);

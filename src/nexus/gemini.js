@@ -61,7 +61,7 @@ async function generateLore(username, avatarUrl) {
         return JSON.parse(jsonString);
 
     } catch (error) {
-        console.error('❌ Nexus Brain Error (Lore):', error);
+        console.error('✖ Nexus Brain Error (Lore):', error);
         return {
             title: "The Unknown Traveler",
             lore: "A mysterious figure whose records are encrypted beyond recognization.",
@@ -94,7 +94,7 @@ async function generateChronicle(messages) {
         const result = await model.generateContent(prompt);
         return result.response.text();
     } catch (error) {
-        console.error('❌ Nexus Brain Error (Chronicle):', error);
+        console.error('✖ Nexus Brain Error (Chronicle):', error);
         return "The mists of time obscure the recent events...";
     }
 }
@@ -239,7 +239,7 @@ Return ONLY valid JSON in this exact format (no markdown, no commentary):
 
         return parsed;
     } catch (error) {
-        console.error('❌ Nexus Brain Error (Heist Riddle):', error);
+        console.error('✖ Nexus Brain Error (Heist Riddle):', error);
 
         // Fallback: pick a random local riddle so the game still feels fresh
         const pick = getNextFallbackRiddle();

@@ -20,16 +20,16 @@ module.exports = {
         const member = interaction.member;
         const hasManageMessages = Boolean(member?.permissions?.has?.(PermissionFlagsBits.ManageMessages));
         if (!hasManageMessages) {
-            return interaction.reply({ content: '❌ You need **Manage Messages** permission to use this command.', ephemeral: true }).catch(() => null);
+            return interaction.reply({ content: '**✖ You need Manage Messages permission to use this command.**', ephemeral: true }).catch(() => null);
         }
 
         if (!interaction.guild || !interaction.channel) {
-            return interaction.reply({ content: '❌ This command can only be used in a server channel.', ephemeral: true }).catch(() => null);
+            return interaction.reply({ content: '**✖ This command can only be used in a server channel.**', ephemeral: true }).catch(() => null);
         }
 
         const word = interaction.options.getString('word');
         if (!word || !word.length) {
-            return interaction.reply({ content: '❌ Missing word.', ephemeral: true }).catch(() => null);
+            return interaction.reply({ content: '**✖ Missing word.**', ephemeral: true }).catch(() => null);
         }
 
         await interaction.deferReply({ ephemeral: true }).catch(() => null);
@@ -66,7 +66,7 @@ module.exports = {
 
             const successEmbed = new EmbedBuilder()
                 .setColor(THEME.COLORS.SUCCESS)
-                .setDescription(`✅ Deleted **${totalDeleted}** messages containing: \`${word}\``)
+                .setDescription(`**✓ Deleted ${totalDeleted} messages containing: \`${word}\`**`)
                 .setTimestamp();
 
             const okAsset = buildAssetAttachment('ok');
@@ -78,7 +78,7 @@ module.exports = {
 
             const err = new EmbedBuilder()
                 .setColor(THEME.COLORS.ERROR)
-                .setDescription('❌ Failed to clear messages. (Possible rate limit / missing permissions / messages too old)');
+                .setDescription('**✖ Failed to clear messages. (Possible rate limit / missing permissions / messages too old)**');
 
             const badAsset = buildAssetAttachment('wrong');
             if (badAsset?.url) err.setImage(badAsset.url);

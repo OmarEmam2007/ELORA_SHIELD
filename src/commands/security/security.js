@@ -90,13 +90,13 @@ module.exports = {
     async execute(interaction) {
         const hasAdministrator = Boolean(interaction.member?.permissions?.has?.(PermissionFlagsBits.Administrator));
         if (!hasAdministrator) {
-            return interaction.reply({ content: '❌ You need **Administrator** permission to use this command.', ephemeral: true }).catch(() => null);
+            return interaction.reply({ content: '**✖ You need Administrator permission to use this command.**', ephemeral: true }).catch(() => null);
         }
 
         const sub = interaction.options.getSubcommand();
         const guildId = interaction.guildId;
 
-        if (!interaction.guild) return interaction.reply({ content: 'This command can only be used in a server.', ephemeral: true });
+        if (!interaction.guild) return interaction.reply({ content: '**This command can only be used in a server.**', ephemeral: true });
 
         if (sub === 'logs') {
             const channel = interaction.options.getChannel('channel');
@@ -105,7 +105,7 @@ module.exports = {
                 { $set: { securityLogChannelId: channel.id }, $setOnInsert: { guildId } },
                 { upsert: true, new: true }
             );
-            return interaction.reply({ content: `✅ Security logs will be sent to ${channel}.`, ephemeral: true });
+            return interaction.reply({ content: `**✓ Security logs will be sent to ${channel}.**`, ephemeral: true });
         }
 
         if (sub === 'toggle') {
@@ -115,7 +115,7 @@ module.exports = {
                 { $set: { antiNukeEnabled: enabled }, $setOnInsert: { guildId } },
                 { upsert: true, new: true }
             );
-            return interaction.reply({ content: `✅ Anti-nuke is now ${enabled ? 'enabled' : 'disabled'}.`, ephemeral: true });
+            return interaction.reply({ content: `**✓ Anti-nuke is now ${enabled ? 'enabled' : 'disabled'}.**`, ephemeral: true });
         }
 
         if (sub === 'antilink') {
@@ -125,13 +125,13 @@ module.exports = {
                 { $set: { antiLinkEnabled: enabled }, $setOnInsert: { guildId } },
                 { upsert: true, new: true }
             );
-            return interaction.reply({ content: `✅ Anti-link is now ${enabled ? 'enabled' : 'disabled'}.`, ephemeral: true });
+            return interaction.reply({ content: `**✓ Anti-link is now ${enabled ? 'enabled' : 'disabled'}.**`, ephemeral: true });
         }
 
         if (sub === 'whitelist-add' || sub === 'whitelist-remove') {
             const type = interaction.options.getString('type');
             const id = normalizeId(interaction.options.getString('id'));
-            if (!id) return interaction.reply({ content: '❌ Invalid ID.', ephemeral: true });
+            if (!id) return interaction.reply({ content: '**✖ Invalid ID.**', ephemeral: true });
 
             const cfg = await getOrCreate(guildId);
 
@@ -150,7 +150,7 @@ module.exports = {
             }
 
             await cfg.save();
-            return interaction.reply({ content: `✅ Whitelist updated.`, ephemeral: true });
+            return interaction.reply({ content: '**✓ Whitelist updated.**', ephemeral: true });
         }
 
         if (sub === 'whitelist-list') {

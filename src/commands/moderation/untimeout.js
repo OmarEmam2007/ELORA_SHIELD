@@ -24,7 +24,7 @@ module.exports = {
         const hasModerateMembers = Boolean(memberInvoker?.permissions?.has?.(PermissionFlagsBits.ModerateMembers));
         if (!hasModerateMembers) {
             if (isSlash) {
-                return interaction.reply({ content: '❌ You need **Moderate Members** permission to use this command.', ephemeral: true }).catch(() => null);
+                return interaction.reply({ content: '**✖ You need Moderate Members permission to use this command.**', ephemeral: true }).catch(() => null);
             }
             return interaction.reply(`${ERROR_EMOJI} **You need Moderate Members permission to use this command.**`).catch(() => null);
         }
@@ -61,7 +61,7 @@ module.exports = {
         const member = await mainMsg.guild.members.fetch(targetUser.id).catch(() => null);
         if (!member) {
             if (isSlash) {
-                return interaction.reply({ content: '❌ User is not in this server.', ephemeral: true }).catch(() => null);
+                return interaction.reply({ content: '**✖ User is not in this server.**', ephemeral: true }).catch(() => null);
             }
             return mainMsg.reply(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɪꜱ ɴᴏᴛ ɪɴ ᴛʜɪꜱ ꜱᴇʀᴠᴇʀ.**`);
         }
@@ -93,7 +93,7 @@ module.exports = {
             if (isSlash) {
                 const ok = new EmbedBuilder()
                     .setColor(THEME.COLORS.SUCCESS)
-                    .setDescription(`✅ Timeout removed for **${targetUser.tag}**\nReason: ${reason}`)
+                    .setDescription(`**✓ Timeout removed for ${targetUser.tag}\nReason: ${reason}**`)
                     .setTimestamp();
 
                 const okAsset = buildAssetAttachment('ok');
@@ -106,7 +106,7 @@ module.exports = {
         } catch (e) {
             console.error('[UNTIMEOUT] error:', e);
             if (isSlash) {
-                return interaction.reply({ content: '❌ Failed to remove timeout.', ephemeral: true }).catch(() => null);
+                return interaction.reply({ content: '**✖ Failed to remove timeout.**', ephemeral: true }).catch(() => null);
             }
             return mainMsg.reply(`${ERROR_EMOJI} **ᴇʀʀᴏʀ.**`).catch(() => null);
         }

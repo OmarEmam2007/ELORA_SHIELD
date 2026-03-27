@@ -9,7 +9,7 @@ module.exports = {
 
         const hasAdministrator = Boolean(interaction.member?.permissions?.has?.(PermissionFlagsBits.Administrator));
         if (!hasAdministrator) {
-            return interaction.reply({ content: '❌ You need **Administrator** permission to use this command.', ephemeral: true }).catch(() => null);
+            return interaction.reply({ content: '**✖ You need Administrator permission to use this command.**', ephemeral: true }).catch(() => null);
         }
 
         // Load the local image
@@ -37,6 +37,6 @@ module.exports = {
 
         // Send file + embed
         await interaction.channel.send({ files: [file], embeds: [embed], components: [row] });
-        await interaction.reply({ content: '✅ Modern Welcome panel deployed!', ephemeral: true });
+        await interaction.reply({ content: '**✓ Modern Welcome panel deployed!**', ephemeral: true });
     },
 };

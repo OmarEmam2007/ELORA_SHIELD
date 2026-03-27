@@ -61,11 +61,11 @@ function makeStatusEmbed({
 }
 
 function makeSuccess({ title = 'Success', description, assetKey = 'ok' } = {}) {
-    return makeStatusEmbed({ title, description, variant: 'SUCCESS', assetKey, emoji: '✅', author: 'Elora RENDER' });
+    return makeStatusEmbed({ title, description, variant: 'SUCCESS', assetKey, emoji: '✓', author: 'Elora RENDER' });
 }
 
 function makeError({ title = 'Error', description, assetKey = 'wrong' } = {}) {
-    return makeStatusEmbed({ title, description, variant: 'ERROR', assetKey, emoji: '❌', author: 'Elora RENDER' });
+    return makeStatusEmbed({ title, description, variant: 'ERROR', assetKey, emoji: '✖', author: 'Elora RENDER' });
 }
 
 function makeLoading({ title = 'Loading...', description, assetKey = 'loading' } = {}) {
@@ -73,7 +73,7 @@ function makeLoading({ title = 'Loading...', description, assetKey = 'loading' }
 }
 
 function makeInfo({ title = 'Info', description, assetKey = 'info' } = {}) {
-    return makeStatusEmbed({ title, description, variant: 'PRIMARY', assetKey, emoji: 'ℹ️', author: 'Elora RENDER', assetPlacement: 'thumbnail' });
+    return makeStatusEmbed({ title, description, variant: 'PRIMARY', assetKey, emoji: '▫️', author: 'Elora RENDER', assetPlacement: 'thumbnail' });
 }
 
 function makeCooldown({ title = 'Cooldown', description, assetKey = 'cooldown' } = {}) {

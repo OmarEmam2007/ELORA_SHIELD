@@ -24,10 +24,10 @@ async function generateDashboard(guildId) {
         .setColor('#5865F2')
         .setDescription(`━━━━━━━━━━━━━━━━━━━━━━━━\n**Nexus Intelligent Defense Overview**\n━━━━━━━━━━━━━━━━━━━━━━━━`)
         .addFields(
-            { name: '🛡️ Filter Status', value: settings.enabled ? '✅ **ONLINE**' : '❌ **OFFLINE**', inline: true },
+            { name: '🛡️ Filter Status', value: settings.enabled ? '✓ **ONLINE**' : '✖ **OFFLINE**', inline: true },
             { name: '⚡ Sensitivity', value: `Level **${settings.sensitivity}/5**`, inline: true },
-            { name: '🌐 Multilingual', value: settings.multilingual ? '✅ Enabled' : '❌ Disabled', inline: true },
-            { name: '🧠 Adaptive Learning', value: settings.learningMode ? '✅ Active' : '❌ Inactive', inline: true },
+            { name: '🌐 Multilingual', value: settings.multilingual ? '✓ Enabled' : '✖ Disabled', inline: true },
+            { name: '🧠 Adaptive Learning', value: settings.learningMode ? '✓ Active' : '✖ Inactive', inline: true },
             { name: '📊 Total Violations', value: `\`${totalViolations}\``, inline: true },
             { name: '🔥 Extreme Alerts', value: `\`${extremeViolations}\``, inline: true }
         )

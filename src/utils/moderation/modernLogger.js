@@ -27,7 +27,7 @@ function createLogEmbed(data) {
         .addFields(
             { name: '👤 User', value: `${user} (\`${user.id}\`)`, inline: true },
             { name: '⚖️ Action', value: `\`${action}\``, inline: true },
-            { name: '🌡️ Severity', value: `${severity === 'Extreme' ? '🔴' : severity === 'Severe' ? '🟡' : '🟢'} ${severity}`, inline: true },
+            { name: '🌡️ Severity', value: `${severity === 'Extreme' ? '🔴' : severity === 'Severe' ? '🟡' : '▫️'} ${severity}`, inline: true },
             { name: '📊 Confidence', value: `\`${confidence}%\``, inline: true },
             { name: '🚫 Violation', value: `\`${violationType}\``, inline: true },
             { name: '📝 Reason', value: `*${reason}*`, inline: true },
@@ -42,7 +42,7 @@ function createLogEmbed(data) {
             new ButtonBuilder()
                 .setCustomId(`mod_warn_${user.id}_${caseId}`)
                 .setLabel('Warn')
-                .setEmoji('⚠️')
+                .setEmoji('⟁')
                 .setStyle(ButtonStyle.Secondary),
             new ButtonBuilder()
                 .setCustomId(`mod_timeout_${user.id}_${caseId}`)
@@ -57,7 +57,7 @@ function createLogEmbed(data) {
             new ButtonBuilder()
                 .setCustomId(`mod_dismiss_${caseId}`)
                 .setLabel('False Positive')
-                .setEmoji('✅')
+                .setEmoji('✓')
                 .setStyle(ButtonStyle.Success)
         );
 

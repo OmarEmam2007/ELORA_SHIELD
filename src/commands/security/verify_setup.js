@@ -15,7 +15,7 @@ module.exports = {
     async execute(interaction) {
         const hasAdministrator = Boolean(interaction.member?.permissions?.has?.(PermissionFlagsBits.Administrator));
         if (!hasAdministrator) {
-            return interaction.reply({ content: '❌ You need **Administrator** permission to use this command.', ephemeral: true }).catch(() => null);
+            return interaction.reply({ content: '**✖ You need Administrator permission to use this command.**', ephemeral: true }).catch(() => null);
         }
 
         if (!interaction.inGuild?.()) {
@@ -38,6 +38,6 @@ module.exports = {
             { upsert: true }
         ).catch(() => null);
 
-        return interaction.editReply({ content: `✅ Verification panel posted in ${interaction.channel} and saved.` });
+        return interaction.editReply({ content: `**✓ Verification panel posted in ${interaction.channel} and saved.**` });
     }
 };

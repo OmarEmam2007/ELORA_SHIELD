@@ -48,7 +48,7 @@ module.exports = {
 
         const ownerId = client?.config?.ownerId || process.env.OWNER_ID;
         if (!ownerId) {
-            console.warn('⚠️ WARNING: Owner ID is not set in config.json! /panic and /blacklist will NOT work.');
+            console.warn('⟁ WARNING: Owner ID is not set in config.json! /panic and /blacklist will NOT work.');
         } else {
             console.log(`👑 Owner ID detected: ${ownerId}`);
         }
@@ -116,7 +116,7 @@ module.exports = {
 
             console.log('🎫 Invite cache initialized.');
         } catch (e) {
-            console.error('❌ Invite cache init error:', e);
+            console.error('✖ Invite cache init error:', e);
         }
 
         // --- 🎫 Invite Reward Roles Sync (highest-tier-only) ---
@@ -165,7 +165,7 @@ module.exports = {
                 }
             }
         } catch (e) {
-            console.error('❌ Invite reward roles sync error:', e);
+            console.error('✖ Invite reward roles sync error:', e);
         }
     },
 };

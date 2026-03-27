@@ -39,7 +39,7 @@ class SmartSpotifyPlugin extends SpotifyPlugin {
 
             // 4. Find best match based on duration (tolerance +/- 5 seconds)
             if (!searchResults || searchResults.length === 0) {
-                console.log('⚠️ Smart Search: No results found on SoundCloud.');
+                console.log('⟁ Smart Search: No results found on SoundCloud.');
                 return result; // Fallback to Spotify (will likely fail to play)
             }
 
@@ -49,14 +49,14 @@ class SmartSpotifyPlugin extends SpotifyPlugin {
             });
 
             if (bestMatch) {
-                console.log(`✅ Smart Search: Match Found! "${bestMatch.name}" (Diff: ${Math.abs(bestMatch.duration - result.duration)}s) URL: ${bestMatch.url}`);
+                console.log(`✓ Smart Search: Match Found! "${bestMatch.name}" (Diff: ${Math.abs(bestMatch.duration - result.duration)}s) URL: ${bestMatch.url}`);
                 return bestMatch;
             } else {
-                console.log(`⚠️ Smart Search: No exact duration match. Falling back to first result: "${searchResults[0].name}" URL: ${searchResults[0].url}`);
+                console.log(`⟁ Smart Search: No exact duration match. Falling back to first result: "${searchResults[0].name}" URL: ${searchResults[0].url}`);
                 return searchResults[0]; // FORCE Fallback to the first result so it PLAYS
             }
         } catch (e) {
-            console.error('❌ Smart Search Error:', e);
+            console.error('✖ Smart Search Error:', e);
         }
 
         return result;

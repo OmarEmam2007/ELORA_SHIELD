@@ -37,12 +37,12 @@ async function loadCommands(client) {
             await rest.put(Routes.applicationGuildCommands(appId, guild.id), { body: [] });
             await rest.put(Routes.applicationGuildCommands(appId, guild.id), { body: commandsArray });
 
-            console.log(`✅ Slash Commands Registered (cleared + re-registered) to Guild: ${guild.name}`);
+            console.log(`✓ Slash Commands Registered (cleared + re-registered) to Guild: ${guild.name}`);
             return;
         } catch (error) {
             // If Discord rejects the bulk payload, find the offending command.
             if (error?.code === 50035) {
-                console.error('❌ Bulk guild command registration failed (50035). Locating invalid command...');
+                console.error('✖ Bulk guild command registration failed (50035). Locating invalid command...');
                 try {
                     const token = process.env.DISCORD_TOKEN;
                     if (token && client.application?.id) {
@@ -57,10 +57,10 @@ async function loadCommands(client) {
                     try {
                         await guild.commands.create(cmd);
                     } catch (e) {
-                        console.error('❌ Invalid slash command payload detected.');
-                        console.error('❌ Command name:', cmd?.name);
-                        console.error('❌ Command JSON:', JSON.stringify(cmd));
-                        console.error('❌ Discord error:', e);
+                        console.error('✖ Invalid slash command payload detected.');
+                        console.error('✖ Command name:', cmd?.name);
+                        console.error('✖ Command JSON:', JSON.stringify(cmd));
+                        console.error('✖ Discord error:', e);
                         throw e;
                     }
                 }
@@ -80,15 +80,15 @@ async function loadCommands(client) {
                 if (guild) {
                     // 1. Register to GUILD (Instant for development/primary server)
                     await registerGuildCommandsSafely(guild);
-                    console.log(`✅ Slash Commands Registered to Guild: ${guild.name}`);
+                    console.log(`✓ Slash Commands Registered to Guild: ${guild.name}`);
                 }
             }
         } catch (error) {
-            console.error('❌ Error registering slash commands:', error);
+            console.error('✖ Error registering slash commands:', error);
         }
     });
 
-    console.log('✅ Commands Loaded');
+    console.log('✓ Commands Loaded');
 }
 
 module.exports = { loadCommands };

@@ -28,7 +28,7 @@ module.exports = {
         const hasBanMembers = Boolean(memberInvoker?.permissions?.has?.(PermissionFlagsBits.BanMembers));
         if (!hasBanMembers) {
             if (isSlash) {
-                return interaction.reply({ content: '❌ You need **Ban Members** permission to use this command.', ephemeral: true }).catch(() => null);
+                return interaction.reply({ content: '**✖ You need Ban Members permission to use this command.**', ephemeral: true }).catch(() => null);
             }
             return interaction.reply(`${ERROR_EMOJI} **You need Ban Members permission to use this command.**`).catch(() => null);
         }
@@ -59,7 +59,7 @@ module.exports = {
 
         if (!/^\d{15,25}$/.test(String(targetId || ''))) {
             if (isSlash) {
-                return interaction.reply({ content: '❌ Invalid user id.', ephemeral: true }).catch(() => null);
+                return interaction.reply({ content: '**✖ Invalid user id.**', ephemeral: true }).catch(() => null);
             }
             return mainMsg.reply(`${ERROR_EMOJI} **ɪɴᴠᴀʟɪᴅ ᴜꜱᴇʀ ɪᴅ.**`);
         }
@@ -69,7 +69,7 @@ module.exports = {
             const isBanned = Boolean(bans?.has?.(targetId));
             if (!isBanned) {
                 if (isSlash) {
-                    return interaction.reply({ content: 'ℹ️ This user is not banned.', ephemeral: true }).catch(() => null);
+                    return interaction.reply({ content: '**▫️ This user is not banned.**', ephemeral: true }).catch(() => null);
                 }
                 return mainMsg.reply(`${ERROR_EMOJI} **ᴛʜɪꜱ ᴜꜱᴇʀ ɪꜱ ɴᴏᴛ ʙᴀɴɴᴇᴅ.**`);
             }
@@ -79,7 +79,7 @@ module.exports = {
             if (isSlash) {
                 const ok = new EmbedBuilder()
                     .setColor(THEME.COLORS.SUCCESS)
-                    .setDescription(`✅ Unbanned: \`${targetId}\`\nReason: ${reason}`)
+                    .setDescription(`**✓ Unbanned: \`${targetId}\`\nReason: ${reason}**`)
                     .setTimestamp();
 
                 const okAsset = buildAssetAttachment('ok');
@@ -94,7 +94,7 @@ module.exports = {
             if (isSlash) {
                 const err = new EmbedBuilder()
                     .setColor(THEME.COLORS.ERROR)
-                    .setDescription('❌ Failed to unban user.');
+                    .setDescription('**✖ Failed to unban user.**');
 
                 const badAsset = buildAssetAttachment('wrong');
                 if (badAsset?.url) err.setImage(badAsset.url);

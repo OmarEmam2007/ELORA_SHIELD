@@ -120,7 +120,7 @@ module.exports = {
 
             // 1. Get the Welcome Channel by ID
             const channel = member.guild.channels.cache.get('1461484367728869397');
-            if (!channel) return console.log('⚠️ Welcome channel not found.');
+            if (!channel) return console.log('⟁ Welcome channel not found.');
 
             // 2. Send a placeholder or "Analyzing..." message?
             const analyzingMsg = await channel.send(`*⚡ The Nexus is analyzing the digital signature of ${member}...*`);
@@ -179,7 +179,7 @@ module.exports = {
             // }
 
         } catch (error) {
-            console.error('❌ Sentient Entry Error:', error);
+            console.error('✖ Sentient Entry Error:', error);
         }
     },
 };

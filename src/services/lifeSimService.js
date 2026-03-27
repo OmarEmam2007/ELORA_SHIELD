@@ -80,10 +80,11 @@ class LifeSimService {
                     
                     const notificationEmbed = new EmbedBuilder()
                         .setColor(THEME.COLORS.SUCCESS)
-                        .setAuthor({ name: '✅ Role Assigned' })
+                        .setAuthor({ name: '✓ Role Assigned' })
                         .setDescription(
-                            `You have been assigned the **${roleDisplayName}** role!\n\n` +
-                            `*This role grants you special privileges in the ELORA Life Sim.*`
+                            `**You have been assigned the ${roleDisplayName} role!\n\n` +
+                            `*This role grants you special privileges in the ELORA Life Sim.*` +
+                            `**`
                         )
                         .setTimestamp();
                     
@@ -118,10 +119,11 @@ class LifeSimService {
                     
                     const notificationEmbed = new EmbedBuilder()
                         .setColor(THEME.COLORS.WARNING)
-                        .setAuthor({ name: '⚠️ Role Removed' })
+                        .setAuthor({ name: '⟁ Role Removed' })
                         .setDescription(
-                            `The **${roleDisplayName}** role has been removed from you.\n\n` +
-                            `*Your privileges have been updated.*`
+                            `**The ${roleDisplayName} role has been removed from you.\n\n` +
+                            `*Your privileges have been updated.*` +
+                            `**`
                         )
                         .setTimestamp();
                     

@@ -3,12 +3,12 @@ const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('disc
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('panic')
-        .setDescription('🚨 EMERGENCY: Strips Administrator from ALL roles (Owner only).')
+        .setDescription('⟁ EMERGENCY: Strips Administrator from ALL roles (Owner only).')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     async execute(interaction, client) {
         // Double check it's the owner or trusted ID (Config based check recommend in real prod, here relying on check)
         if (interaction.user.id !== client.config.ownerId) {
-            return interaction.reply({ content: '❌ Only the Bot Owner can use this command!', ephemeral: true });
+            return interaction.reply({ content: '**✖ Only the Bot Owner can use this command!**', ephemeral: true });
         }
 
         await interaction.deferReply({ ephemeral: true });
@@ -48,11 +48,11 @@ module.exports = {
         }
 
         const embed = new EmbedBuilder()
-            .setAuthor({ name: '🚨 PANIC MODE ACTIVATED' })
+            .setAuthor({ name: '⟁ PANIC MODE ACTIVATED' })
             .setDescription(
-                `Stripped dangerous permissions from **${modifiedRoles.length}** roles.\n\n` +
-                `**Secured Roles:** ${modifiedRoles.join(', ') || 'None'}\n` +
-                `**Failed (Check hierarchy):** ${failedRoles.join(', ') || 'None'}`
+                `**Stripped dangerous permissions from ${modifiedRoles.length} roles.\n\n` +
+                `Secured Roles: ${modifiedRoles.join(', ') || 'None'}\n` +
+                `Failed (Check hierarchy): ${failedRoles.join(', ') || 'None'}**`
             )
             .setColor(client.config.colors.error)
             .setTimestamp();

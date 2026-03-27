@@ -33,38 +33,38 @@ module.exports = {
 
         // --- ⚙️ SETTINGS PANEL MODALS (Admin only) ---
         if (interaction.isModalSubmit() && (interaction.customId === 'settings_modal_whitelist_role' || interaction.customId === 'settings_modal_whitelist_channel')) {
-            return safeReply({ content: '❌ Settings panel is not available on ELORA_SHIELD.', ephemeral: true });
+            return safeReply({ content: '**✖ Settings panel is not available on ELORA_SHIELD.**', ephemeral: true });
         }
 
         // --- ⚙️ SETTINGS PANEL SELECT MENU (Admin only) ---
         if (interaction.isStringSelectMenu?.() && interaction.customId === 'settings_menu') {
-            return safeReply({ content: '❌ Settings panel is not available on ELORA_SHIELD.', ephemeral: true });
+            return safeReply({ content: '**✖ Settings panel is not available on ELORA_SHIELD.**', ephemeral: true });
         }
 
         try {
         if (interaction.isButton()) {
             // --- ⚙️ SETTINGS PANEL BUTTONS (Admin only) ---
             if (interaction.customId && interaction.customId.startsWith('settings_')) {
-                return safeReply({ content: '❌ Settings panel is not available on ELORA_SHIELD.', ephemeral: true });
+                return safeReply({ content: '**✖ Settings panel is not available on ELORA_SHIELD.**', ephemeral: true });
             }
 
             // --- Verification Button ---
             if (interaction.customId === 'verify_astray') {
                 const roleId = client.config.astrayRoleId;
                 const role = interaction.guild.roles.cache.get(roleId);
-                if (!role) return safeReply({ content: '❌ Role not found.', ephemeral: true });
-                if (interaction.member.roles.cache.has(roleId)) return safeReply({ content: 'ℹ️ Already verified.', ephemeral: true });
+                if (!role) return safeReply({ content: '**✖ Role not found.**', ephemeral: true });
+                if (interaction.member.roles.cache.has(roleId)) return safeReply({ content: '**▫️ Already verified.**', ephemeral: true });
                 try {
                     await interaction.member.roles.add(role);
-                    return safeReply({ content: '🗝️ **Access Granted.**', ephemeral: true });
+                    return safeReply({ content: '**✓ Access Granted.**', ephemeral: true });
                 } catch (error) {
-                    return safeReply({ content: '❌ Hierarchy error.', ephemeral: true });
+                    return safeReply({ content: '**✖ Hierarchy error.**', ephemeral: true });
                 }
             }
 
             // --- 🛡️ SMART MODERATION BUTTONS ---
             if (interaction.customId.startsWith('mod_') || interaction.customId.startsWith('dash_')) {
-                if (!interaction.member.permissions.has(PermissionFlagsBits.ManageMessages)) return safeReply({ content: '❌ No permission.', ephemeral: true });
+                if (!interaction.member.permissions.has(PermissionFlagsBits.ManageMessages)) return safeReply({ content: '**✖ No permission.**', ephemeral: true });
                 const parts = interaction.customId.split('_');
                 const action = parts[1];
 
@@ -83,13 +83,13 @@ module.exports = {
                             return safeUpdate({ embeds: [embed], components: [] });
                         }
                         const target = await interaction.guild.members.fetch(userId).catch(() => null);
-                        if (!target) return safeReply({ content: '❌ User left.', ephemeral: true });
+                        if (!target) return safeReply({ content: '**✖ User left.**', ephemeral: true });
                         switch (action) {
-                            case 'warn': await target.send('⚠️ Warning: Severe profanity detected.').catch(() => { }); break;
+                            case 'warn': await target.send('**⟁ Warning: Severe profanity detected.**').catch(() => { }); break;
                             case 'timeout': if (target.moderatable) await target.timeout(10 * 60 * 1000); break;
                             case 'ban': if (target.bannable) await target.ban({ reason: 'Smart Mod' }); break;
                         }
-                        return safeReply({ content: `✅ Action: ${action} applied.`, ephemeral: true });
+                        return safeReply({ content: `**✓ Action: ${action} applied.**`, ephemeral: true });
                     }
 
                     if (interaction.customId.startsWith('dash_')) {
@@ -112,7 +112,7 @@ module.exports = {
                         const dashboard = await generateDashboard(interaction.guildId);
                         return safeUpdate(dashboard);
                     }
-                } catch (e) { return safeReply({ content: `❌ ${e.message}`, ephemeral: true }); }
+                } catch (e) { return safeReply({ content: `**✖ ${e.message}**`, ephemeral: true }); }
             }
         }
 
@@ -121,13 +121,13 @@ module.exports = {
             const OWNER_ROLE_ID = '1461766723274412126';
             const hasOwnerRole = interaction.member?.roles?.cache?.has(OWNER_ROLE_ID);
             const isOwnerId = client?.config?.ownerId && interaction.user.id === client.config.ownerId;
-            if (!hasOwnerRole && !isOwnerId) return safeReply({ content: '❌ Owner only.', ephemeral: true });
+            if (!hasOwnerRole && !isOwnerId) return safeReply({ content: '**✖ Owner only.**', ephemeral: true });
 
             const trigger = interaction.fields.getTextInputValue('cr_trigger')?.trim();
             const reply = interaction.fields.getTextInputValue('cr_reply')?.trim();
             const matchRaw = interaction.fields.getTextInputValue('cr_match')?.trim()?.toLowerCase();
 
-            if (!trigger || !reply) return safeReply({ content: '❌ Missing trigger or reply.', ephemeral: true });
+            if (!trigger || !reply) return safeReply({ content: '**✖ Missing trigger or reply.**', ephemeral: true });
 
             const matchType = matchRaw === 'startswith' || matchRaw === 'start' || matchRaw === 'sw' ? 'startsWith' : 'exact';
 
@@ -143,12 +143,12 @@ module.exports = {
 
                 const ok = new EmbedBuilder()
                     .setColor(THEME.COLORS.SUCCESS)
-                    .setDescription(`✅ Saved custom reply for trigger: \`${trigger}\``)
+                    .setDescription(`**✓ Saved custom reply for trigger: \`${trigger}\`**`)
                     .setFooter(THEME.FOOTER);
 
                 return safeReply({ embeds: [ok], ephemeral: true });
             } catch (e) {
-                return safeReply({ content: `❌ Failed to save: ${e.message || e}`, ephemeral: true });
+                return safeReply({ content: `**✖ Failed to save: ${e.message || e}**`, ephemeral: true });
             }
         }
 
@@ -159,7 +159,7 @@ module.exports = {
             await command.execute(interaction, client);
         } catch (error) {
             console.error(error);
-            await safeReply({ content: 'Error executing command!', ephemeral: true });
+            await safeReply({ content: '**Error executing command!**', ephemeral: true });
         }
         }
         catch (e) {
