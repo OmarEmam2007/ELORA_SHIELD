@@ -6,6 +6,27 @@ const { canActOnTarget } = require('../../utils/moderationHierarchy');
 const DONE_EMOJI = '<:555:1479967165619634348>';
 const ERROR_EMOJI = '<:661071whitex:1479988133704761515>';
 
+function parseHumanDurationToMs(input) {
+    const raw = String(input || '').trim().toLowerCase();
+    if (!raw) return null;
+    const m = raw.match(/^(\d+)([a-z])?$/i);
+    if (!m) return null;
+    const n = Number(m[1]);
+    if (!Number.isFinite(n) || n <= 0) return null;
+    const unit = (m[2] || '').toLowerCase();
+    const minute = 60 * 1000;
+    const hour = 60 * minute;
+    const day = 24 * hour;
+    const week = 7 * day;
+    const month = 30 * day;
+    if (!unit) return n * minute;
+    if (unit === 'h') return n * hour;
+    if (unit === 'd') return n * day;
+    if (unit === 'w') return n * week;
+    if (unit === 'm') return n * month;
+    return null;
+}
+
 module.exports = {
     name: 'timeout',
     aliases: ['time', 'timeout'],
@@ -49,10 +70,10 @@ module.exports = {
             duration = interaction.options.getInteger('duration');
             reason = interaction.options.getString('reason') || 'Temporal Stasis Protocol';
         } else {
-            // Prefix: .time @User [Minutes] [Reason]
+            // Prefix: .time @User [Duration] [Reason]
             const targetId = commandArgs[0]?.replace(/[<@!>]/g, '');
             if (!targetId || !commandArgs[1]) {
-                return interaction.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴛɪᴍᴇ @ᴜꜱᴇʀ [ᴍɪɴᴜᴛᴇꜱ] [ʀᴇᴀꜱᴏɴ]**`);
+                return interaction.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴛɪᴍᴇ @ᴜꜱᴇʀ [15/1h/1d/1w/1m] [ʀᴇᴀꜱᴏɴ]**`);
             }
             try {
                 targetUser = await bot.users.fetch(targetId);
@@ -60,8 +81,10 @@ module.exports = {
                 return interaction.reply(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ.**`);
             }
 
-            duration = parseInt(commandArgs[1]);
-            if (isNaN(duration)) return interaction.reply(`${ERROR_EMOJI} **ɪɴᴠᴀʟɪᴅ ᴅᴜʀᴀᴛɪᴏɴ.**`);
+            const durationToken = commandArgs[1];
+            const durationMs = parseHumanDurationToMs(durationToken);
+            if (!durationMs) return interaction.reply(`${ERROR_EMOJI} **ɪɴᴠᴀʟɪᴅ ᴅᴜʀᴀᴛɪᴏɴ.**`);
+            duration = Math.ceil(durationMs / (60 * 1000));
             reason = commandArgs.slice(2).join(' ') || 'Temporal Stasis Protocol';
         }
 

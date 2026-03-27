@@ -288,7 +288,10 @@ module.exports = {
                  const durationToken = parts[2] || '';
                  const durationMs = eloraParseHumanDurationToMs(durationToken);
 
-                 if (!targetMember || !durationMs) return;
+                 if (!targetMember || !durationMs) {
+                     await message.reply({ content: '**الاستخدام: اخرس @منشن 15 او 1h او 1d او 1w او 1m**' }).catch(() => null);
+                     return;
+                 }
 
                  const me = message.guild.members.me;
                  const botCanModerate = me?.permissions?.has(PermissionFlagsBits.ModerateMembers);
