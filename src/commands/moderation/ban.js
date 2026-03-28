@@ -123,21 +123,11 @@ module.exports = {
 
         // --- 3. Execution ---
         try {
-            // DM (prefix must never send embeds)
-            if (isSlash) {
-                const dmEmbed = new EmbedBuilder()
-                    .setColor(THEME.COLORS.ERROR)
-                    .setThumbnail(THEME.ICONS.MOON_FULL)
-                    .setTitle(`💥 Ejected from ${interaction.guild.name}`)
-                    .setDescription(`**You have been exiled to the dark side of the moon.\n\nReason: ${reason}**`)
-                    .setTimestamp();
-                await targetUser.send({ embeds: [dmEmbed] }).catch(() => { });
-            } else {
-                await targetUser.send(
-                    `${DONE_EMOJI} **ʏᴏᴜ ʜᴀᴠᴇ ʙᴇᴇɴ ʙᴀɴɴᴇᴅ ꜰʀᴏᴍ ${String(interaction.guild.name || '').toUpperCase()}.**\n` +
-                    `${DONE_EMOJI} **ʀᴇᴀꜱᴏɴ: ${reason}**`
-                ).catch(() => { });
-            }
+            const dmText =
+                `**✖ Banned from ${String(interaction.guild.name || 'SERVER')}**\n` +
+                `**⤿ You have been permanently banned.**\n` +
+                `**▫️ Reason: ${reason}**`;
+            await targetUser.send(dmText).catch(() => { });
 
             await interaction.guild.members.ban(targetUser, {
                 reason: reason,

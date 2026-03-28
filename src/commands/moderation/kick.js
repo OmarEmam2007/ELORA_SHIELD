@@ -126,15 +126,11 @@ module.exports = {
 
         // --- 3. Execution ---
         try {
-            // DM (prefix must never send embeds; slash can keep its own style)
-            if (isSlash) {
-                await targetUser.send(`**👢 Kicked from ${mainMsg.guild.name}\nReason: ${reason}**`).catch(() => { });
-            } else {
-                await targetUser.send(
-                    `${DONE_EMOJI} **ʏᴏᴜ ʜᴀᴠᴇ ʙᴇᴇɴ ᴋɪᴄᴋᴇᴅ ꜰʀᴏᴍ ${String(mainMsg.guild.name || '').toUpperCase()}.**\n` +
-                    `${DONE_EMOJI} **ʀᴇᴀꜱᴏɴ: ${reason}**`
-                ).catch(() => { });
-            }
+            const dmText =
+                `**✖ Kicked from ${String(mainMsg.guild.name || 'SERVER')}**\n` +
+                `**⤿ You have been kicked.**\n` +
+                `**▫️ Reason: ${reason}**`;
+            await targetUser.send(dmText).catch(() => { });
 
             await member.kick(reason);
 

@@ -241,156 +241,152 @@ module.exports = {
              console.error('[ELORA Cyber-Shield] Scanner error:', e);
          }
 
-         // --- حطه / حطيه (Ban Command) ---
-         // Format:
-         // حطه @mention reason...
-         // حطيه @mention reason...
-         // Requirements:
-         // - Server owner OR member has BanMembers permission
-         // Responses must be fully bold and include specific custom emoji IDs.
-         try {
-             const raw = String(message.content || '').trim();
-             const parts = raw.split(/\s+/).filter(Boolean);
-             const cmd = parts[0];
-             const isBanCmd = cmd === 'حطه' || cmd === 'حطيه';
-             if (isBanCmd) {
-                 const isServerOwner = message.guild?.ownerId === message.author.id;
-                 const canBan = message.member?.permissions?.has(PermissionFlagsBits.BanMembers);
-                 if (!isServerOwner && !canBan) return;
+        // --- حطه / حطيه (Ban Command) ---
+        // Format:
+        // حطه @mention|id reason...
+        // حطيه @mention|id reason...
+        // Requirements:
+        // - Server owner OR member has BanMembers permission
+        // Responses must be fully bold and include specific custom emoji IDs.
+        try {
+            const raw = String(message.content || '').trim();
+            const parts = raw.split(/\s+/).filter(Boolean);
+            const cmd = parts[0];
+            const isBanCmd = cmd === 'حطه' || cmd === 'حطيه';
+            if (isBanCmd) {
+                const isServerOwner = message.guild?.ownerId === message.author.id;
+                const canBan = message.member?.permissions?.has(PermissionFlagsBits.BanMembers);
+                if (!isServerOwner && !canBan) return;
 
-                 const EMOJI_OK = '<:elora:1479538799712276702>';
-                 const EMOJI_NEED_MENTION = '<:elora:1479539014611505253>';
+                const EMOJI_OK = '<:elora:1479538799712276702>';
+                const EMOJI_NEED_MENTION = '<:elora:1479539014611505253>';
 
-                 const targetMember = await eloraResolveTargetMember(message, parts, 1);
-                 if (!targetMember) {
-                     await message.reply({ content: `**لازم تعمل منشن يا قلبي صحصح كده ${EMOJI_NEED_MENTION}**` }).catch(() => null);
-                     return;
-                 }
+                const targetMember = await eloraResolveTargetMember(message, parts, 1);
+                if (!targetMember) {
+                    await message.reply({ content: `**لازم تعمل منشن يا قلبي صحصح كده ${EMOJI_NEED_MENTION}**` }).catch(() => null);
+                    return;
+                }
 
-                 const reasonParts = parts.slice(2);
-                 const reason = reasonParts.join(' ').trim() || `Banned by ${message.author.tag}`;
+                const reason = parts.slice(2).join(' ').trim() || `Banned by ${message.author.tag}`;
 
-                 if (targetMember.id === message.guild.ownerId) return;
-                 if (!targetMember.bannable) {
-                     await message.reply({ content: `**مش قادر أبند الشخص ده (Hierarchy/Permissions). ${EMOJI_NEED_MENTION}**` }).catch(() => null);
-                     return;
-                 }
+                if (targetMember.id === message.guild.ownerId) return;
+                if (!targetMember.bannable) {
+                    await message.reply({ content: `**مش قادر أبند الشخص ده (Hierarchy/Permissions). ${EMOJI_NEED_MENTION}**` }).catch(() => null);
+                    return;
+                }
 
-                 await targetMember.ban({ reason }).catch(() => null);
-                 await message.reply({ content: `**خرج من زوروا يا روحي ${EMOJI_OK}**` }).catch(() => null);
-                 return;
-             }
-         } catch (e) {
-             console.error('[لف BAN] Error:', e);
-         }
+                const banDmText =
+                    `**✖ Banned from ELORA**\n` +
+                    `**⤿ You have been permanently banned.**\n` +
+                    `**▫️ Reason: ${reason}**`;
+                await targetMember.user?.send?.(banDmText).catch(() => null);
 
-         try {
-             const raw = String(message.content || '').trim();
-             const parts = raw.split(/\s+/).filter(Boolean);
-             const cmd = parts[0];
-             const isWarnCmd = cmd === '.warn' || cmd === '.تحذير';
-             const isResetWarnCmd = (cmd === '.reset' && parts[1]?.toLowerCase?.() === 'warn') || cmd === '.اعفاء';
+                await targetMember.ban({ reason }).catch(() => null);
+                await message.reply({ content: `**خرج من زوروا يا روحي ${EMOJI_OK}**` }).catch(() => null);
+                return;
+            }
+        } catch (e) {
+            console.error('[لف BAN] Error:', e);
+        }
 
-             if (isResetWarnCmd) {
-                 const canManageMessages = message.member?.permissions?.has(PermissionFlagsBits.ManageMessages);
-                 const isAdministrator = message.member?.permissions?.has(PermissionFlagsBits.Administrator);
-                 if (!canManageMessages && !isAdministrator) {
-                     await message.reply({ content: '**✖ You cannot use this command.**' }).catch(() => null);
-                     return;
-                 }
+        // --- .warn / .تحذير + .reset warn / .اعفاء ---
+        try {
+            const raw = String(message.content || '').trim();
+            const parts = raw.split(/\s+/).filter(Boolean);
+            const cmd = parts[0];
+            const isWarnCmd = cmd === '.warn' || cmd === '.تحذير';
+            const isResetWarnCmd = (cmd === '.reset' && parts[1]?.toLowerCase?.() === 'warn') || cmd === '.اعفاء';
 
-                 const targetIndex = cmd === '.reset' ? 2 : 1;
-                 const targetMember = await eloraResolveTargetMember(message, parts, targetIndex);
-                 const targetUser = targetMember?.user || null;
-                 if (!targetUser) {
-                     await message.reply({ content: '**✖ Invalid syntax. Use: .reset warn @mention**' }).catch(() => null);
-                     return;
-                 }
+            if (isResetWarnCmd) {
+                const canManageMessages = message.member?.permissions?.has(PermissionFlagsBits.ManageMessages);
+                const isAdministrator = message.member?.permissions?.has(PermissionFlagsBits.Administrator);
+                if (!canManageMessages && !isAdministrator) {
+                    await message.reply({ content: '**✖ You cannot use this command.**' }).catch(() => null);
+                    return;
+                }
 
-                 const res = await WarnCase.deleteMany({ guildId: message.guild.id, userId: targetUser.id }).catch(() => null);
-                 const deleted = res?.deletedCount || 0;
-                 await message.reply({ content: `**✓ Cleared ${deleted} warning(s) for <@${targetUser.id}>.**` }).catch(() => null);
-                 return;
-             }
+                const targetIndex = cmd === '.reset' ? 2 : 1;
+                const targetMember = await eloraResolveTargetMember(message, parts, targetIndex);
+                const targetUser = targetMember?.user || null;
+                if (!targetUser) {
+                    await message.reply({ content: '**✖ Invalid syntax. Use: .reset warn @mention**' }).catch(() => null);
+                    return;
+                }
 
-             if (isWarnCmd) {
-                 const canManageMessages = message.member?.permissions?.has(PermissionFlagsBits.ManageMessages);
-                 const isAdministrator = message.member?.permissions?.has(PermissionFlagsBits.Administrator);
-                 if (!canManageMessages && !isAdministrator) {
-                     await message.reply({ content: '**✖ You cannot use this command.**' }).catch(() => null);
-                     return;
-                 }
+                const res = await WarnCase.deleteMany({ guildId: message.guild.id, userId: targetUser.id }).catch(() => null);
+                const deleted = res?.deletedCount || 0;
+                await message.reply({ content: `**✓ Cleared ${deleted} warning(s) for <@${targetUser.id}>.**` }).catch(() => null);
+                return;
+            }
 
-                 const targetMember = await eloraResolveTargetMember(message, parts, 1);
-                 const targetUser = targetMember?.user || null;
-                 if (!targetUser || !targetMember) {
-                     await message.reply({ content: '**✖ Invalid syntax. Use: .warn @mention [reason]**' }).catch(() => null);
-                     return;
-                 }
+            if (isWarnCmd) {
+                const canManageMessages = message.member?.permissions?.has(PermissionFlagsBits.ManageMessages);
+                const isAdministrator = message.member?.permissions?.has(PermissionFlagsBits.Administrator);
+                if (!canManageMessages && !isAdministrator) {
+                    await message.reply({ content: '**✖ You cannot use this command.**' }).catch(() => null);
+                    return;
+                }
 
-                 const isSelf = targetUser.id === message.author.id;
-                 const isBot = Boolean(targetUser.bot);
-                 const isTargetAdmin = Boolean(targetMember?.permissions?.has?.(PermissionFlagsBits.Administrator));
-                 if (isSelf || isBot || isTargetAdmin) {
-                     await message.reply({ content: '**✖ You cannot warn this user.**' }).catch(() => null);
-                     return;
-                 }
+                const targetMember = await eloraResolveTargetMember(message, parts, 1);
+                const targetUser = targetMember?.user || null;
+                if (!targetUser || !targetMember) {
+                    await message.reply({ content: '**✖ Invalid syntax. Use: .warn @mention [reason]**' }).catch(() => null);
+                    return;
+                }
 
-                 const reasonRaw = parts.slice(2).join(' ').trim();
-                 const hasReason = Boolean(reasonRaw);
-                 const reasonLine = hasReason
-                     ? `**▫️ Reason: ${reasonRaw}**`
-                     : '**▫️ No reason provided.**';
+                const isSelf = targetUser.id === message.author.id;
+                const isBot = Boolean(targetUser.bot);
+                const isTargetAdmin = Boolean(targetMember?.permissions?.has?.(PermissionFlagsBits.Administrator));
+                if (isSelf || isBot || isTargetAdmin) {
+                    await message.reply({ content: '**✖ You cannot warn this user.**' }).catch(() => null);
+                    return;
+                }
 
-                 await WarnCase.create({
-                     guildId: message.guild.id,
-                     userId: targetUser.id,
-                     moderatorId: message.author.id,
-                     reason: hasReason ? reasonRaw : 'No reason provided.'
-                 }).catch(() => null);
+                const reasonRaw = parts.slice(2).join(' ').trim();
+                const hasReason = Boolean(reasonRaw);
+                const reasonLine = hasReason
+                    ? `**▫️ Reason: ${reasonRaw}**`
+                    : '**▫️ No reason provided.**';
 
-                 const warnCount = await WarnCase.countDocuments({ guildId: message.guild.id, userId: targetUser.id }).catch(() => 0);
+                await WarnCase.create({
+                    guildId: message.guild.id,
+                    userId: targetUser.id,
+                    moderatorId: message.author.id,
+                    reason: hasReason ? reasonRaw : 'No reason provided.'
+                }).catch(() => null);
 
-                 if (warnCount >= 3) {
-                     const finalDm = new EmbedBuilder()
-                         .setColor('#000000')
-                         .setTitle('**✖ Banned from ELORA**')
-                         .setDescription(
-                             '**⤿ You have been permanently banned.**\n' +
-                             '**▫️ Reason: Reached the maximum limit of 3 warnings.**'
-                         );
+                const warnCount = await WarnCase.countDocuments({ guildId: message.guild.id, userId: targetUser.id }).catch(() => 0);
 
-                     await targetUser.send({ embeds: [finalDm] }).catch(() => null);
-                     await message.guild.members.ban(targetUser.id, { reason: 'Reached 3 warnings' }).catch(() => null);
-                     await WarnCase.deleteMany({ guildId: message.guild.id, userId: targetUser.id }).catch(() => null);
+                if (warnCount >= 3) {
+                    const finalDmText =
+                        `**✖ Banned from ELORA**\n` +
+                        `**⤿ You have been permanently banned.**\n` +
+                        `**▫️ Reason: Reached the maximum limit of 3 warnings.**`;
 
-                     await message.reply({
-                         content: `**❖ The user <@${targetUser.id}> has reached 3 warnings and has been permanently banned.**`
-                     }).catch(() => null);
-                     return;
-                 }
+                    await targetUser.send(finalDmText).catch(() => null);
+                    await message.guild.members.ban(targetUser.id, { reason: 'Reached 3 warnings' }).catch(() => null);
+                    await WarnCase.deleteMany({ guildId: message.guild.id, userId: targetUser.id }).catch(() => null);
 
-                 const dmEmbed = new EmbedBuilder()
-                     .setColor('#000000')
-                     .setTitle('**⟁ Warning Received**')
-                     .setDescription(
-                         `**⤿ You have been warned by <@${message.author.id}>.**\n` +
-                         `${reasonLine}\n` +
-                         `**▫️ Warning Count: ${warnCount}/3**`
-                     );
+                    await message.reply({
+                        content: `**❖ The user <@${targetUser.id}> has reached 3 warnings and has been permanently banned.**`
+                    }).catch(() => null);
+                    return;
+                }
 
-                 await targetUser.send({ embeds: [dmEmbed] }).catch(() => null);
-                 await message.reply({ content: `**✓ The user <@${targetUser.id}> has been warned.**` }).catch(() => null);
-                 return;
-             }
-         } catch (e) {
-             console.error('[WARN/AUTOBAN] Error:', e);
-         }
+                const dmText =
+                    `**⟁ Warning Received**\n` +
+                    `**⤿ You have been warned by <@${message.author.id}>.**\n` +
+                    `${reasonLine}\n` +
+                    `**▫️ Warning Count: ${warnCount}/3**`;
 
-        const ANTISWEAR_DEBUG = process.env.ANTISWEAR_DEBUG === '1';
+                await targetUser.send(dmText).catch(() => null);
+                await message.reply({ content: `**✓ The user <@${targetUser.id}> has been warned.**` }).catch(() => null);
+                return;
+            }
+        } catch (e) {
+            console.error('[WARN/AUTOBAN] Error:', e);
+        }
 
-        // --- Anti-Swear Toggle Commands (per-channel) ---
-        // We handle these early so the command itself never gets deleted by anti-swear.
         try {
             const raw = String(message.content || '').trim();
             const lower = raw.toLowerCase();
