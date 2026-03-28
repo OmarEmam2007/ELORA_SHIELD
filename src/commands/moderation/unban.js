@@ -76,6 +76,15 @@ module.exports = {
 
             await mainMsg.guild.members.unban(targetId, reason);
 
+            const targetUser = await bot.users.fetch(targetId).catch(() => null);
+            if (targetUser) {
+                const dmText =
+                    `**⟁ Unbanned**\n` +
+                    `**⤿ You have been unbanned from ${String(mainMsg.guild?.name || 'SERVER')}.**\n` +
+                    `**▫️ Reason: ${reason}**`;
+                await targetUser.send(dmText).catch(() => { });
+            }
+
             if (isSlash) {
                 const ok = new EmbedBuilder()
                     .setColor(THEME.COLORS.SUCCESS)

@@ -8,7 +8,7 @@ const ERROR_EMOJI = '<:661071whitex:1479988133704761515>';
 
 module.exports = {
     name: 'untimeout',
-    aliases: ['untimeout', 'un-timeout'],
+    aliases: ['untimeout', 'un-timeout', 'untime'],
     data: new SlashCommandBuilder()
         .setName('untimeout')
         .setDescription('Remove timeout from a user.')
@@ -89,6 +89,12 @@ module.exports = {
 
         try {
             await member.timeout(null, reason);
+
+            const dmText =
+                `**⟁ Timeout Removed**\n` +
+                `**⤿ Your timeout has been removed in ${String(mainMsg.guild?.name || 'SERVER')}.**\n` +
+                `**▫️ Reason: ${reason}**`;
+            await targetUser.send(dmText).catch(() => { });
 
             if (isSlash) {
                 const ok = new EmbedBuilder()
