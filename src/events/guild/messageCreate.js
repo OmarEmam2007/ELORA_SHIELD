@@ -2,6 +2,7 @@ const { PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const { checkLink, extractUrls } = require('../../utils/securityUtils');
 const ModSettings = require('../../models/ModSettings');
 const GuildSecurityConfig = require('../../models/GuildSecurityConfig');
+const WarnCase = require('../../models/WarnCase');
 const { detectProfanitySimple } = require('../../utils/moderation/coreDetector');
 const THEME = require('../../utils/theme');
 const { getGuildLogChannel } = require('../../utils/getGuildLogChannel');
@@ -307,6 +308,109 @@ module.exports = {
              }
          } catch (e) {
              console.error('[اخرس] Error:', e);
+         }
+
+         try {
+             const raw = String(message.content || '').trim();
+             const parts = raw.split(/\s+/).filter(Boolean);
+             const cmd = parts[0];
+             const isWarnCmd = cmd === '.warn' || cmd === '.تحذير';
+             const isResetWarnCmd = (cmd === '.reset' && parts[1]?.toLowerCase?.() === 'warn') || cmd === '.اعفاء';
+
+             if (isResetWarnCmd) {
+                 const canManageMessages = message.member?.permissions?.has(PermissionFlagsBits.ManageMessages);
+                 const isAdministrator = message.member?.permissions?.has(PermissionFlagsBits.Administrator);
+                 if (!canManageMessages && !isAdministrator) {
+                     await message.reply({ content: '**✖ You cannot use this command.**' }).catch(() => null);
+                     return;
+                 }
+
+                 const targetMember = message.mentions?.members?.first?.() || null;
+                 const targetUser = targetMember?.user || message.mentions?.users?.first?.() || null;
+                 if (!targetUser) {
+                     await message.reply({ content: '**✖ Invalid syntax. Use: .reset warn @mention**' }).catch(() => null);
+                     return;
+                 }
+
+                 const res = await WarnCase.deleteMany({ guildId: message.guild.id, userId: targetUser.id }).catch(() => null);
+                 const deleted = res?.deletedCount || 0;
+                 await message.reply({ content: `**✓ Cleared ${deleted} warning(s) for <@${targetUser.id}>.**` }).catch(() => null);
+                 return;
+             }
+
+             if (isWarnCmd) {
+                 const canManageMessages = message.member?.permissions?.has(PermissionFlagsBits.ManageMessages);
+                 const isAdministrator = message.member?.permissions?.has(PermissionFlagsBits.Administrator);
+                 if (!canManageMessages && !isAdministrator) {
+                     await message.reply({ content: '**✖ You cannot use this command.**' }).catch(() => null);
+                     return;
+                 }
+
+                 const targetMember = message.mentions?.members?.first?.() || null;
+                 const targetUser = targetMember?.user || message.mentions?.users?.first?.() || null;
+                 if (!targetUser || !targetMember) {
+                     await message.reply({ content: '**✖ Invalid syntax. Use: .warn @mention [reason]**' }).catch(() => null);
+                     return;
+                 }
+
+                 const isSelf = targetUser.id === message.author.id;
+                 const isBot = Boolean(targetUser.bot);
+                 const isTargetAdmin = Boolean(targetMember?.permissions?.has?.(PermissionFlagsBits.Administrator));
+                 if (isSelf || isBot || isTargetAdmin) {
+                     await message.reply({ content: '**✖ You cannot warn this user.**' }).catch(() => null);
+                     return;
+                 }
+
+                 const reasonRaw = parts.slice(2).join(' ').trim();
+                 const hasReason = Boolean(reasonRaw);
+                 const reasonLine = hasReason
+                     ? `**▫️ Reason: ${reasonRaw}**`
+                     : '**▫️ No reason provided.**';
+
+                 await WarnCase.create({
+                     guildId: message.guild.id,
+                     userId: targetUser.id,
+                     moderatorId: message.author.id,
+                     reason: hasReason ? reasonRaw : 'No reason provided.'
+                 }).catch(() => null);
+
+                 const warnCount = await WarnCase.countDocuments({ guildId: message.guild.id, userId: targetUser.id }).catch(() => 0);
+
+                 if (warnCount >= 3) {
+                     const finalDm = new EmbedBuilder()
+                         .setColor('#000000')
+                         .setTitle('**✖ Banned from ELORA**')
+                         .setDescription(
+                             '**⤿ You have been permanently banned.**\n' +
+                             '**▫️ Reason: Reached the maximum limit of 3 warnings.**'
+                         );
+
+                     await targetUser.send({ embeds: [finalDm] }).catch(() => null);
+
+                     await message.guild.members.ban(targetUser.id, { reason: 'Reached 3 warnings' }).catch(() => null);
+                     await WarnCase.deleteMany({ guildId: message.guild.id, userId: targetUser.id }).catch(() => null);
+
+                     await message.reply({
+                         content: `**❖ The user <@${targetUser.id}> has reached 3 warnings and has been permanently banned.**`
+                     }).catch(() => null);
+                     return;
+                 }
+
+                 const dmEmbed = new EmbedBuilder()
+                     .setColor('#000000')
+                     .setTitle('**⟁ Warning Received**')
+                     .setDescription(
+                         `**⤿ You have been warned by <@${message.author.id}>.**\n` +
+                         `${reasonLine}\n` +
+                         `**▫️ Warning Count: ${warnCount}/3**`
+                     );
+
+                 await targetUser.send({ embeds: [dmEmbed] }).catch(() => null);
+                 await message.reply({ content: `**✓ The user <@${targetUser.id}> has been warned.**` }).catch(() => null);
+                 return;
+             }
+         } catch (e) {
+             console.error('[WARN/AUTOBAN] Error:', e);
          }
 
         const ANTISWEAR_DEBUG = process.env.ANTISWEAR_DEBUG === '1';
