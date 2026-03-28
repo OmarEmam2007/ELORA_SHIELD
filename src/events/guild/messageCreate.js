@@ -49,6 +49,16 @@ function eloraParseHumanDurationToMs(input) {
     return null;
 }
 
+async function eloraResolveTargetMember(message, parts, idTokenIndex) {
+    const mentioned = message.mentions?.members?.first?.() || null;
+    if (mentioned) return mentioned;
+
+    const token = String(parts?.[idTokenIndex] || '').trim();
+    const id = token.replace(/\D/g, '');
+    if (!id || id.length < 15) return null;
+    return message.guild.members.fetch(id).catch(() => null);
+}
+
  function eloraHostMatchesBadSet(host) {
      const normalized = eloraNormalizeHost(host);
      if (!normalized) return null;
@@ -251,18 +261,15 @@ module.exports = {
                  const EMOJI_OK = '<:elora:1479538799712276702>';
                  const EMOJI_NEED_MENTION = '<:elora:1479539014611505253>';
 
-                 const targetMember = message.mentions?.members?.first?.() || null;
+                 const targetMember = await eloraResolveTargetMember(message, parts, 1);
                  if (!targetMember) {
                      await message.reply({ content: `**لازم تعمل منشن يا قلبي صحصح كده ${EMOJI_NEED_MENTION}**` }).catch(() => null);
                      return;
                  }
 
-                 // Extract reason: remove the command word and the mention token if present
-                 // parts[0] is the command word
                  const reasonParts = parts.slice(2);
                  const reason = reasonParts.join(' ').trim() || `Banned by ${message.author.tag}`;
 
-                 // Safety checks
                  if (targetMember.id === message.guild.ownerId) return;
                  if (!targetMember.bannable) {
                      await message.reply({ content: `**مش قادر أبند الشخص ده (Hierarchy/Permissions). ${EMOJI_NEED_MENTION}**` }).catch(() => null);
@@ -280,39 +287,6 @@ module.exports = {
          try {
              const raw = String(message.content || '').trim();
              const parts = raw.split(/\s+/).filter(Boolean);
-             if (parts[0] === 'اخرس') {
-                 const isServerOwner = message.guild?.ownerId === message.author.id;
-                 const canTimeout = message.member?.permissions?.has(PermissionFlagsBits.ModerateMembers);
-                 if (!isServerOwner && !canTimeout) return;
-
-                 const targetMember = message.mentions?.members?.first?.() || null;
-                 const durationToken = parts[2] || '';
-                 const durationMs = eloraParseHumanDurationToMs(durationToken);
-
-                 if (!targetMember || !durationMs) {
-                     await message.reply({ content: '**الاستخدام: اخرس @منشن 15 او 1h او 1d او 1w او 1m**' }).catch(() => null);
-                     return;
-                 }
-
-                 const me = message.guild.members.me;
-                 const botCanModerate = me?.permissions?.has(PermissionFlagsBits.ModerateMembers);
-
-                 const maxMs = 28 * 24 * 60 * 60 * 1000;
-
-                 if (targetMember && durationMs && durationMs > 0 && durationMs <= maxMs && botCanModerate && targetMember.moderatable && targetMember.id !== message.guild.ownerId) {
-                     await targetMember.timeout(durationMs, `Muted by ${message.author.tag}`).catch(() => null);
-                 }
-
-                 await message.reply({ content: '**تم**' }).catch(() => null);
-                 return;
-             }
-         } catch (e) {
-             console.error('[اخرس] Error:', e);
-         }
-
-         try {
-             const raw = String(message.content || '').trim();
-             const parts = raw.split(/\s+/).filter(Boolean);
              const cmd = parts[0];
              const isWarnCmd = cmd === '.warn' || cmd === '.تحذير';
              const isResetWarnCmd = (cmd === '.reset' && parts[1]?.toLowerCase?.() === 'warn') || cmd === '.اعفاء';
@@ -325,8 +299,9 @@ module.exports = {
                      return;
                  }
 
-                 const targetMember = message.mentions?.members?.first?.() || null;
-                 const targetUser = targetMember?.user || message.mentions?.users?.first?.() || null;
+                 const targetIndex = cmd === '.reset' ? 2 : 1;
+                 const targetMember = await eloraResolveTargetMember(message, parts, targetIndex);
+                 const targetUser = targetMember?.user || null;
                  if (!targetUser) {
                      await message.reply({ content: '**✖ Invalid syntax. Use: .reset warn @mention**' }).catch(() => null);
                      return;
@@ -346,8 +321,8 @@ module.exports = {
                      return;
                  }
 
-                 const targetMember = message.mentions?.members?.first?.() || null;
-                 const targetUser = targetMember?.user || message.mentions?.users?.first?.() || null;
+                 const targetMember = await eloraResolveTargetMember(message, parts, 1);
+                 const targetUser = targetMember?.user || null;
                  if (!targetUser || !targetMember) {
                      await message.reply({ content: '**✖ Invalid syntax. Use: .warn @mention [reason]**' }).catch(() => null);
                      return;
@@ -386,7 +361,6 @@ module.exports = {
                          );
 
                      await targetUser.send({ embeds: [finalDm] }).catch(() => null);
-
                      await message.guild.members.ban(targetUser.id, { reason: 'Reached 3 warnings' }).catch(() => null);
                      await WarnCase.deleteMany({ guildId: message.guild.id, userId: targetUser.id }).catch(() => null);
 

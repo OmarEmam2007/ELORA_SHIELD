@@ -21,7 +21,8 @@ module.exports = {
             return message.reply(`${ERROR_EMOJI} **ɪ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ʀᴏʟᴇꜱ ᴘᴇʀᴍɪꜱꜱɪᴏɴ.**`);
         }
 
-        const target = message.mentions.members.first();
+        const args = message?.content ? String(message.content).trim().split(/\s+/).slice(1) : [];
+        const target = message.mentions.members.first() || (args?.[0] ? await message.guild.members.fetch(String(args[0]).replace(/\D/g, '')).catch(() => null) : null);
         if (!target) {
             return message.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴜɴᴍᴜᴛᴇ @ᴜꜱᴇʀ**`);
         }

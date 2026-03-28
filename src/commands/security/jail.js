@@ -18,7 +18,7 @@ module.exports = {
             return message.reply(`${ERROR_EMOJI} **ʏᴏᴜ ᴅᴏ ɴᴏᴛ ʜᴀᴠᴇ ᴘᴇʀᴍɪꜱꜱɪᴏɴ.**`);
         }
 
-        const targetUser = message.mentions.users.first();
+        const targetUser = message.mentions.users.first() || (args?.[0] ? await client.users.fetch(String(args[0]).replace(/\D/g, '')).catch(() => null) : null);
         const duration = parseInt(args[1]);
 
         if (!targetUser) {

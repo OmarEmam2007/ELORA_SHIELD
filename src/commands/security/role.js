@@ -58,7 +58,7 @@ module.exports = {
             return message.reply(`${ERROR_EMOJI} **ʏᴏᴜ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ʀᴏʟᴇꜱ ᴛᴏ ᴜꜱᴇ ᴛʜɪꜱ.**`);
         }
 
-        const targetMember = message.mentions.members.first();
+        const targetMember = message.mentions.members.first() || (args?.[0] ? await message.guild.members.fetch(String(args[0]).replace(/\D/g, '')).catch(() => null) : null);
         if (!targetMember) {
             return message.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ʀ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
         }
