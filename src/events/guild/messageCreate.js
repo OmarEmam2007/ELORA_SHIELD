@@ -17,9 +17,13 @@ const { handlePrefixCommand } = require('../../handlers/prefixCommandHandler');
 
  // Map<GuildId, Map<UserId, { recent: number[], identical: Map<string, number[]>, punishedUntil: number }>>
  const antiSpamTracker = new Map();
+ // Map<GuildId, Map<UserId, { strikes: number, lastStrikeAt: number }>>
+ const antiSpamStrikeTracker = new Map();
  // Map<GuildId, { cfg: any, fetchedAt: number }>
  const antiSpamConfigCache = new Map();
  const ANTI_SPAM_CFG_TTL_MS = 30 * 1000;
+
+ const ANTI_SPAM_ENFORCE_COOLDOWN_MS = 5 * 1000;
 
  const ELORA_CYBERSHIELD_FEED_URL = 'https://phish.sinking.yachts/v2/all';
  const ELORA_CYBERSHIELD_REFRESH_MS = 6 * 60 * 60 * 1000;
@@ -99,11 +103,12 @@ async function eloraResolveTargetMember(message, parts, idTokenIndex) {
      const member = message.member;
      if (!member) return false;
 
+     // Owner is always exempt
+     if (member.id === member.guild.ownerId) return true;
+
      const perms = member.permissions;
      const isAdmin = Boolean(perms?.has?.(PermissionFlagsBits.Administrator));
-     const canManageMessages = Boolean(perms?.has?.(PermissionFlagsBits.ManageMessages));
-     const canModerateMembers = Boolean(perms?.has?.(PermissionFlagsBits.ModerateMembers));
-     if (isAdmin || canManageMessages || canModerateMembers) return true;
+     if (isAdmin) return true;
 
      const wlUsers = Array.isArray(cfg?.whitelistUsers) ? cfg.whitelistUsers : [];
      if (wlUsers.includes(message.author.id)) return true;
@@ -119,18 +124,20 @@ async function eloraResolveTargetMember(message, parts, idTokenIndex) {
      return false;
  }
 
- async function eloraAntiSpamLogAlert({ guild, client, cfg, offenderId, channelId }) {
+ async function eloraAntiSpamLogAlert({ guild, client, cfg, offenderId, channelId, penaltyHours }) {
      const logChannelId = cfg?.spamLogChannelId || null;
      if (!logChannelId) return;
      const logChannel = await guild.channels.fetch(logChannelId).catch(() => null);
      if (!logChannel) return;
+
+     const hours = Number(penaltyHours || 1);
 
      const embed = new EmbedBuilder()
          .setColor('#000000')
          .setTitle('**⟁ Anti-Spam Alert**')
          .setDescription(
              `**▫️ User <@${offenderId}> was detected spamming.**\n` +
-             `**▫️ Penalty: 1 hour Timeout.**\n` +
+             `**▫️ Penalty: ${hours} hour Timeout.**\n` +
              `**▫️ Action Taken: Last 10 messages deleted.**`
          )
          .setFooter({ text: '**<a:custom_check:1487391271759646750>**' });
@@ -138,13 +145,15 @@ async function eloraResolveTargetMember(message, parts, idTokenIndex) {
      await logChannel.send({ embeds: [embed] }).catch(() => null);
  }
 
- async function eloraAntiSpamEnforce(message, cfg) {
+ async function eloraAntiSpamEnforce(message, cfg, penaltyHours) {
      const member = message.member;
+     const hours = Math.max(1, Number(penaltyHours || 1));
+     const timeoutMs = hours * 60 * 60 * 1000;
      if (member) {
          const me = message.guild.members.me;
          const canModerate = Boolean(me?.permissions?.has?.(PermissionFlagsBits.ModerateMembers));
          if (canModerate && member.moderatable) {
-             await member.timeout(ANTI_SPAM_TIMEOUT_MS, '⟁ Anti-Spam: spam detected').catch(() => null);
+             await member.timeout(timeoutMs, '⟁ Anti-Spam: spam detected').catch(() => null);
          }
      }
 
@@ -160,7 +169,7 @@ async function eloraResolveTargetMember(message, parts, idTokenIndex) {
          }
      } catch (_) {}
 
-     await eloraAntiSpamLogAlert({ guild: message.guild, client: message.client, cfg, offenderId: message.author.id, channelId: message.channelId });
+     await eloraAntiSpamLogAlert({ guild: message.guild, client: message.client, cfg, offenderId: message.author.id, channelId: message.channelId, penaltyHours: hours });
  }
 
  function eloraHostMatchesBadSet(host) {
@@ -315,6 +324,11 @@ module.exports = {
                      return;
                  }
 
+                 // Escalation tracker: 1h, 2h, 3h...
+                 if (!antiSpamStrikeTracker.has(guildId)) antiSpamStrikeTracker.set(guildId, new Map());
+                 const strikeMap = antiSpamStrikeTracker.get(guildId);
+                 const strikeEntry = strikeMap.get(userId) || { strikes: 0, lastStrikeAt: 0 };
+
                  // Mentions spam (single message)
                  const mentionCount = (message.mentions?.users?.size || 0) + (message.mentions?.roles?.size || 0);
                  const mentionSpam = mentionCount > ANTI_SPAM_MENTION_LIMIT;
@@ -338,8 +352,15 @@ module.exports = {
                  const identicalSpam = identicalArr.length >= ANTI_SPAM_IDENTICAL_LIMIT;
 
                  if (mentionSpam || rateSpam || identicalSpam) {
-                     state.punishedUntil = now + ANTI_SPAM_TIMEOUT_MS;
-                     await eloraAntiSpamEnforce(message, cfg);
+                     // prevent repeated enforcement spam for the same burst, but allow re-trigger later
+                     state.punishedUntil = now + ANTI_SPAM_ENFORCE_COOLDOWN_MS;
+
+                     strikeEntry.strikes = Number(strikeEntry.strikes || 0) + 1;
+                     strikeEntry.lastStrikeAt = now;
+                     strikeMap.set(userId, strikeEntry);
+
+                     const penaltyHours = strikeEntry.strikes;
+                     await eloraAntiSpamEnforce(message, cfg, penaltyHours);
                      return;
                  }
              }
