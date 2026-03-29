@@ -295,7 +295,33 @@ module.exports = {
             const parts = raw.split(/\s+/).filter(Boolean);
             const cmd = parts[0];
             const isWarnCmd = cmd === '.warn' || cmd === '.تحذير';
+            const isWarnsCmd = cmd === '.warns';
             const isResetWarnCmd = (cmd === '.reset' && parts[1]?.toLowerCase?.() === 'warn') || cmd === '.اعفاء';
+
+            if (isWarnsCmd) {
+                let targetUserId = null;
+
+                const refMessageId = message.reference?.messageId || null;
+                if (refMessageId) {
+                    const refMsg = await message.channel.messages.fetch(refMessageId).catch(() => null);
+                    if (refMsg?.author?.id) targetUserId = refMsg.author.id;
+                }
+
+                if (!targetUserId) {
+                    const targetMember = await eloraResolveTargetMember(message, parts, 1);
+                    if (targetMember?.user?.id) targetUserId = targetMember.user.id;
+                }
+
+                if (!targetUserId) {
+                    await message.reply({ content: '**✖ Invalid syntax. Use: .warns @mention OR reply with .warns OR .warns userId**' }).catch(() => null);
+                    return;
+                }
+
+                const warnCount = await WarnCase.countDocuments({ guildId: message.guild.id, userId: targetUserId }).catch(() => 0);
+                const warnWord = warnCount === 1 ? 'warning' : 'warnings';
+                await message.reply({ content: `**this user, <@${targetUserId}> has ${warnCount} ${warnWord}**` }).catch(() => null);
+                return;
+            }
 
             if (isResetWarnCmd) {
                 const canManageMessages = message.member?.permissions?.has(PermissionFlagsBits.ManageMessages);
