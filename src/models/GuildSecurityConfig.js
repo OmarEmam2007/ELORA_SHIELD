@@ -5,9 +5,11 @@ const guildSecurityConfigSchema = new mongoose.Schema({
 
     antiNukeEnabled: { type: Boolean, default: true },
     antiLinkEnabled: { type: Boolean, default: true },
+    antiSpamEnabled: { type: Boolean, default: true },
     punishmentTimeoutHours: { type: Number, default: 12 },
 
     securityLogChannelId: { type: String, default: null },
+    spamLogChannelId: { type: String, default: null },
 
     whitelistUsers: { type: [String], default: [] },
     whitelistRoles: { type: [String], default: [] },

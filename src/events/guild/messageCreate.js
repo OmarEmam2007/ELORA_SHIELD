@@ -8,6 +8,19 @@ const THEME = require('../../utils/theme');
 const { getGuildLogChannel } = require('../../utils/getGuildLogChannel');
 const { handlePrefixCommand } = require('../../handlers/prefixCommandHandler');
 
+ const ANTI_SPAM_TIMEOUT_MS = 60 * 60 * 1000;
+ const ANTI_SPAM_RATE_WINDOW_MS = 3 * 1000;
+ const ANTI_SPAM_RATE_LIMIT = 5;
+ const ANTI_SPAM_IDENTICAL_WINDOW_MS = 10 * 1000;
+ const ANTI_SPAM_IDENTICAL_LIMIT = 3;
+ const ANTI_SPAM_MENTION_LIMIT = 10;
+
+ // Map<GuildId, Map<UserId, { recent: number[], identical: Map<string, number[]>, punishedUntil: number }>>
+ const antiSpamTracker = new Map();
+ // Map<GuildId, { cfg: any, fetchedAt: number }>
+ const antiSpamConfigCache = new Map();
+ const ANTI_SPAM_CFG_TTL_MS = 30 * 1000;
+
  const ELORA_CYBERSHIELD_FEED_URL = 'https://phish.sinking.yachts/v2/all';
  const ELORA_CYBERSHIELD_REFRESH_MS = 6 * 60 * 60 * 1000;
  const ELORA_CYBERSHIELD_TIMEOUT_MS = 24 * 60 * 60 * 1000;
@@ -58,6 +71,97 @@ async function eloraResolveTargetMember(message, parts, idTokenIndex) {
     if (!id || id.length < 15) return null;
     return message.guild.members.fetch(id).catch(() => null);
 }
+
+ function eloraNormalizeForSpamKey(content) {
+     const raw = String(content || '');
+     return raw
+         .toLowerCase()
+         .replace(/\s+/g, ' ')
+         .trim()
+         .slice(0, 300);
+ }
+
+ async function eloraGetGuildSecurityConfigCached(guildId) {
+     if (!guildId) return null;
+     const now = Date.now();
+     const hit = antiSpamConfigCache.get(guildId);
+     if (hit && now - hit.fetchedAt < ANTI_SPAM_CFG_TTL_MS) return hit.cfg;
+     const cfg = await GuildSecurityConfig.findOneAndUpdate(
+         { guildId },
+         { $setOnInsert: { guildId } },
+         { upsert: true, new: true }
+     ).catch(() => null);
+     antiSpamConfigCache.set(guildId, { cfg, fetchedAt: now });
+     return cfg;
+ }
+
+ function eloraIsStaffExempt(message, cfg) {
+     const member = message.member;
+     if (!member) return false;
+
+     const perms = member.permissions;
+     const isAdmin = Boolean(perms?.has?.(PermissionFlagsBits.Administrator));
+     const canManageMessages = Boolean(perms?.has?.(PermissionFlagsBits.ManageMessages));
+     const canModerateMembers = Boolean(perms?.has?.(PermissionFlagsBits.ModerateMembers));
+     if (isAdmin || canManageMessages || canModerateMembers) return true;
+
+     const wlUsers = Array.isArray(cfg?.whitelistUsers) ? cfg.whitelistUsers : [];
+     if (wlUsers.includes(message.author.id)) return true;
+
+     const wlRoles = Array.isArray(cfg?.whitelistRoles) ? cfg.whitelistRoles : [];
+     if (wlRoles.length > 0) {
+         const roleIds = member.roles?.cache ? Array.from(member.roles.cache.keys()) : [];
+         for (const r of roleIds) {
+             if (wlRoles.includes(r)) return true;
+         }
+     }
+
+     return false;
+ }
+
+ async function eloraAntiSpamLogAlert({ guild, client, cfg, offenderId, channelId }) {
+     const logChannelId = cfg?.spamLogChannelId || null;
+     if (!logChannelId) return;
+     const logChannel = await guild.channels.fetch(logChannelId).catch(() => null);
+     if (!logChannel) return;
+
+     const embed = new EmbedBuilder()
+         .setColor('#000000')
+         .setTitle('**⟁ Anti-Spam Alert**')
+         .setDescription(
+             `**▫️ User <@${offenderId}> was detected spamming.**\n` +
+             `**▫️ Penalty: 1 hour Timeout.**\n` +
+             `**▫️ Action Taken: Last 10 messages deleted.**`
+         )
+         .setFooter({ text: '**<a:custom_check:1487391271759646750>**' });
+
+     await logChannel.send({ embeds: [embed] }).catch(() => null);
+ }
+
+ async function eloraAntiSpamEnforce(message, cfg) {
+     const member = message.member;
+     if (member) {
+         const me = message.guild.members.me;
+         const canModerate = Boolean(me?.permissions?.has?.(PermissionFlagsBits.ModerateMembers));
+         if (canModerate && member.moderatable) {
+             await member.timeout(ANTI_SPAM_TIMEOUT_MS, '⟁ Anti-Spam: spam detected').catch(() => null);
+         }
+     }
+
+     try {
+         const fetched = await message.channel.messages.fetch({ limit: 50 }).catch(() => null);
+         if (fetched) {
+             const toDelete = fetched
+                 .filter(m => m?.author?.id === message.author.id)
+                 .first(10);
+             for (const m of toDelete) {
+                 await m.delete().catch(() => null);
+             }
+         }
+     } catch (_) {}
+
+     await eloraAntiSpamLogAlert({ guild: message.guild, client: message.client, cfg, offenderId: message.author.id, channelId: message.channelId });
+ }
 
  function eloraHostMatchesBadSet(host) {
      const normalized = eloraNormalizeHost(host);
@@ -190,6 +294,58 @@ module.exports = {
     name: 'messageCreate',
     async execute(message, client) {
         if (message.author.bot || !message.guild) return;
+
+         try {
+             const cfg = await eloraGetGuildSecurityConfigCached(message.guild.id);
+             const antiSpamEnabled = cfg?.antiSpamEnabled !== false;
+             if (antiSpamEnabled && !eloraIsStaffExempt(message, cfg)) {
+                 const guildId = message.guild.id;
+                 const userId = message.author.id;
+                 const now = Date.now();
+
+                 if (!antiSpamTracker.has(guildId)) antiSpamTracker.set(guildId, new Map());
+                 const guildMap = antiSpamTracker.get(guildId);
+
+                 if (!guildMap.has(userId)) {
+                     guildMap.set(userId, { recent: [], identical: new Map(), punishedUntil: 0 });
+                 }
+
+                 const state = guildMap.get(userId);
+                 if (state.punishedUntil && now < state.punishedUntil) {
+                     return;
+                 }
+
+                 // Mentions spam (single message)
+                 const mentionCount = (message.mentions?.users?.size || 0) + (message.mentions?.roles?.size || 0);
+                 const mentionSpam = mentionCount > ANTI_SPAM_MENTION_LIMIT;
+
+                 // Rate spam (messages per window)
+                 state.recent = Array.isArray(state.recent) ? state.recent : [];
+                 state.recent.push(now);
+                 state.recent = state.recent.filter(t => now - t <= ANTI_SPAM_RATE_WINDOW_MS);
+                 const rateSpam = state.recent.length > ANTI_SPAM_RATE_LIMIT;
+
+                 // Identical spam (same content within window)
+                 const key = eloraNormalizeForSpamKey(message.content);
+                 if (!state.identical || !(state.identical instanceof Map)) state.identical = new Map();
+                 if (key) {
+                     const arr = state.identical.get(key) || [];
+                     arr.push(now);
+                     const filtered = arr.filter(t => now - t <= ANTI_SPAM_IDENTICAL_WINDOW_MS);
+                     state.identical.set(key, filtered);
+                 }
+                 const identicalArr = key ? (state.identical.get(key) || []) : [];
+                 const identicalSpam = identicalArr.length >= ANTI_SPAM_IDENTICAL_LIMIT;
+
+                 if (mentionSpam || rateSpam || identicalSpam) {
+                     state.punishedUntil = now + ANTI_SPAM_TIMEOUT_MS;
+                     await eloraAntiSpamEnforce(message, cfg);
+                     return;
+                 }
+             }
+         } catch (_) {
+             // ignore
+         }
 
          try {
              const content = String(message.content || '');
