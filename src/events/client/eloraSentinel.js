@@ -226,7 +226,7 @@ module.exports = {
 
             // Ignore self and other bots
             if (executorId === client?.user?.id) return;
-            if (entry.executor?.bot) return;
+
 
             const now = Date.now();
             const cacheEntry = getOrCreateEntry(executorId);
