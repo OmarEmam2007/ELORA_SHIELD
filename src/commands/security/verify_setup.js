@@ -24,8 +24,8 @@ module.exports = {
 
         await interaction.deferReply({ ephemeral: true });
 
-        const assetPath = path.join(__dirname, '../../assets/555.png');
-        const file = new AttachmentBuilder(assetPath, { name: '555.png' });
+        const assetPath = path.join(__dirname, '../../assets/1234.png');
+        const file = new AttachmentBuilder(assetPath, { name: '1234.png' });
 
         const panelMsg = await interaction.channel.send({ files: [file] });
 
