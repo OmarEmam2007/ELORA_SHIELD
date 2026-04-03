@@ -8,40 +8,40 @@ const THEME = require('../../utils/theme');
 const { getGuildLogChannel } = require('../../utils/getGuildLogChannel');
 const { handlePrefixCommand } = require('../../handlers/prefixCommandHandler');
 
- const ANTI_SPAM_TIMEOUT_MS = 60 * 60 * 1000;
- const ANTI_SPAM_RATE_WINDOW_MS = 3 * 1000;
- const ANTI_SPAM_RATE_LIMIT = 5;
- const ANTI_SPAM_IDENTICAL_WINDOW_MS = 10 * 1000;
- const ANTI_SPAM_IDENTICAL_LIMIT = 3;
- const ANTI_SPAM_MENTION_LIMIT = 10;
+const ANTI_SPAM_TIMEOUT_MS = 60 * 60 * 1000;
+const ANTI_SPAM_RATE_WINDOW_MS = 10 * 1000;
+const ANTI_SPAM_RATE_LIMIT = 10;
+const ANTI_SPAM_IDENTICAL_WINDOW_MS = 10 * 1000;
+const ANTI_SPAM_IDENTICAL_LIMIT = 3;
+const ANTI_SPAM_MENTION_LIMIT = 10;
 
- // Map<GuildId, Map<UserId, { recent: number[], identical: Map<string, number[]>, punishedUntil: number }>>
- const antiSpamTracker = new Map();
- // Map<GuildId, Map<UserId, { strikes: number, lastStrikeAt: number }>>
- const antiSpamStrikeTracker = new Map();
- // Map<GuildId, { cfg: any, fetchedAt: number }>
- const antiSpamConfigCache = new Map();
- const ANTI_SPAM_CFG_TTL_MS = 30 * 1000;
+// Map<GuildId, Map<UserId, { recentMsgs: { t: number, c: string }[], identical: Map<string, { t: number, c: string }[]>, punishedUntil: number }>>
+const antiSpamTracker = new Map();
+// Map<GuildId, Map<UserId, { strikes: number, lastStrikeAt: number }>>
+const antiSpamStrikeTracker = new Map();
+// Map<GuildId, { cfg: any, fetchedAt: number }>
+const antiSpamConfigCache = new Map();
+const ANTI_SPAM_CFG_TTL_MS = 30 * 1000;
 
- const ANTI_SPAM_ENFORCE_COOLDOWN_MS = 5 * 1000;
+const ANTI_SPAM_ENFORCE_COOLDOWN_MS = 5 * 1000;
 
- const ELORA_CYBERSHIELD_FEED_URL = 'https://phish.sinking.yachts/v2/all';
- const ELORA_CYBERSHIELD_REFRESH_MS = 6 * 60 * 60 * 1000;
- const ELORA_CYBERSHIELD_TIMEOUT_MS = 24 * 60 * 60 * 1000;
- const ELORA_CYBERSHIELD_LOG_CHANNEL_ID = process.env.ELORA_SECURITY_LOG_CHANNEL_ID || null;
+const ELORA_CYBERSHIELD_FEED_URL = 'https://phish.sinking.yachts/v2/all';
+const ELORA_CYBERSHIELD_REFRESH_MS = 6 * 60 * 60 * 1000;
+const ELORA_CYBERSHIELD_TIMEOUT_MS = 24 * 60 * 60 * 1000;
+const ELORA_CYBERSHIELD_LOG_CHANNEL_ID = process.env.ELORA_SECURITY_LOG_CHANNEL_ID || null;
 
- let eloraBadDomains = new Set();
- let eloraCyberShieldStarted = false;
+let eloraBadDomains = new Set();
+let eloraCyberShieldStarted = false;
 
- function eloraNormalizeHost(host) {
-     const h = String(host || '').trim().toLowerCase();
-     if (!h) return null;
-     const trimmed = h.replace(/^\.+|\.+$/g, '');
-     const noWww = trimmed.startsWith('www.') ? trimmed.slice(4) : trimmed;
-     return noWww.split(':')[0];
- }
+function eloraNormalizeHost(host) {
+    const h = String(host || '').trim().toLowerCase();
+    if (!h) return null;
+    const trimmed = h.replace(/^\.+|\.+$/g, '');
+    const noWww = trimmed.startsWith('www.') ? trimmed.slice(4) : trimmed;
+    return noWww.split(':')[0];
+}
 
- function eloraDefangDomain(domain) {
+function eloraDefangDomain(domain) {
     return String(domain || '').replace(/\./g, '[.]');
 }
 
@@ -85,6 +85,28 @@ async function eloraResolveTargetMember(message, parts, idTokenIndex) {
          .slice(0, 300);
  }
 
+ function eloraSafeUserTag(user) {
+     if (!user) return 'Unknown';
+     const direct = user.tag;
+     if (direct) return direct;
+     const username = user.username || 'Unknown';
+     const disc = user.discriminator;
+     if (disc && disc !== '0') return `${username}#${disc}`;
+     return username;
+ }
+
+ function eloraBuildSpamEvidenceText(evidenceMessages) {
+     const msgs = Array.isArray(evidenceMessages) ? evidenceMessages : [];
+     const lines = [];
+     for (let i = 0; i < msgs.length; i++) {
+         const raw = String(msgs[i] ?? '');
+         const safe = raw.length > 500 ? `${raw.slice(0, 500)}…` : raw;
+         lines.push(`${i + 1}) ${safe || '[empty]'}`);
+     }
+     const joined = lines.join('\n');
+     return joined.length > 1000 ? `${joined.slice(0, 1000)}…` : joined;
+ }
+
  async function eloraGetGuildSecurityConfigCached(guildId) {
      if (!guildId) return null;
      const now = Date.now();
@@ -124,28 +146,34 @@ async function eloraResolveTargetMember(message, parts, idTokenIndex) {
      return false;
  }
 
- async function eloraAntiSpamLogAlert({ guild, client, cfg, offenderId, channelId, penaltyHours }) {
+ async function eloraAntiSpamLogAlert({ guild, client, cfg, offenderId, offenderTag, channelId, penaltyHours, spamType, triggerCount, evidenceMessages }) {
      const logChannelId = cfg?.spamLogChannelId || null;
      if (!logChannelId) return;
      const logChannel = await guild.channels.fetch(logChannelId).catch(() => null);
      if (!logChannel) return;
 
      const hours = Number(penaltyHours || 1);
+     const tag = String(offenderTag || '').trim() || `Unknown | ${offenderId}`;
+     const type = String(spamType || 'Unknown').trim();
+     const count = Number.isFinite(Number(triggerCount)) ? Number(triggerCount) : null;
+     const evidenceText = eloraBuildSpamEvidenceText(evidenceMessages);
 
      const embed = new EmbedBuilder()
          .setColor('#000000')
          .setTitle('**⟁ Anti-Spam Alert**')
-         .setDescription(
-             `**▫️ User <@${offenderId}> was detected spamming.**\n` +
-             `**▫️ Penalty: ${hours} hour Timeout.**\n` +
-             `**▫️ Action Taken: Last 10 messages deleted.**`
+         .addFields(
+             { name: 'OFFENDER', value: `**${tag} | ${offenderId}**`, inline: false },
+             { name: 'SPAM TYPE', value: `**${type || 'Unknown'}**`, inline: false },
+             { name: 'TRIGGER COUNT', value: `**${count === null ? 'Unknown' : String(count)}**`, inline: false },
+             { name: 'EVIDENCE', value: `\`\`\`\n${evidenceText || '[no evidence captured]'}\n\`\`\``, inline: false },
+             { name: 'ACTION', value: `**Timeout: ${hours} hour(s)**\n**Deleted: last 10 messages**`, inline: false }
          )
          .setFooter({ text: '**<a:custom_check:1487391271759646750>**' });
 
      await logChannel.send({ embeds: [embed] }).catch(() => null);
  }
 
- async function eloraAntiSpamEnforce(message, cfg, penaltyHours) {
+ async function eloraAntiSpamEnforce(message, cfg, penaltyHours, meta) {
      const member = message.member;
      const hours = Math.max(1, Number(penaltyHours || 1));
      const timeoutMs = hours * 60 * 60 * 1000;
@@ -169,7 +197,18 @@ async function eloraResolveTargetMember(message, parts, idTokenIndex) {
          }
      } catch (_) {}
 
-     await eloraAntiSpamLogAlert({ guild: message.guild, client: message.client, cfg, offenderId: message.author.id, channelId: message.channelId, penaltyHours: hours });
+     await eloraAntiSpamLogAlert({
+         guild: message.guild,
+         client: message.client,
+         cfg,
+         offenderId: message.author.id,
+         offenderTag: eloraSafeUserTag(message.author),
+         channelId: message.channelId,
+         penaltyHours: hours,
+         spamType: meta?.spamType,
+         triggerCount: meta?.triggerCount,
+         evidenceMessages: meta?.evidenceMessages
+     });
  }
 
  function eloraHostMatchesBadSet(host) {
@@ -316,7 +355,7 @@ module.exports = {
                  const guildMap = antiSpamTracker.get(guildId);
 
                  if (!guildMap.has(userId)) {
-                     guildMap.set(userId, { recent: [], identical: new Map(), punishedUntil: 0 });
+                     guildMap.set(userId, { recentMsgs: [], identical: new Map(), punishedUntil: 0 });
                  }
 
                  const state = guildMap.get(userId);
@@ -334,19 +373,20 @@ module.exports = {
                  const mentionSpam = mentionCount > ANTI_SPAM_MENTION_LIMIT;
 
                  // Rate spam (messages per window)
-                 state.recent = Array.isArray(state.recent) ? state.recent : [];
-                 state.recent.push(now);
-                 state.recent = state.recent.filter(t => now - t <= ANTI_SPAM_RATE_WINDOW_MS);
-                 const rateSpam = state.recent.length > ANTI_SPAM_RATE_LIMIT;
+                 state.recentMsgs = Array.isArray(state.recentMsgs) ? state.recentMsgs : [];
+                 state.recentMsgs.push({ t: now, c: String(message.content || '') });
+                 state.recentMsgs = state.recentMsgs.filter(m => m && (now - m.t <= ANTI_SPAM_RATE_WINDOW_MS));
+                 if (state.recentMsgs.length > 50) state.recentMsgs = state.recentMsgs.slice(-50);
+                 const rateSpam = state.recentMsgs.length > ANTI_SPAM_RATE_LIMIT;
 
                  // Identical spam (same content within window)
                  const key = eloraNormalizeForSpamKey(message.content);
                  if (!state.identical || !(state.identical instanceof Map)) state.identical = new Map();
                  if (key) {
                      const arr = state.identical.get(key) || [];
-                     arr.push(now);
-                     const filtered = arr.filter(t => now - t <= ANTI_SPAM_IDENTICAL_WINDOW_MS);
-                     state.identical.set(key, filtered);
+                     arr.push({ t: now, c: String(message.content || '') });
+                     const filtered = arr.filter(m => m && (now - m.t <= ANTI_SPAM_IDENTICAL_WINDOW_MS));
+                     state.identical.set(key, filtered.length > 10 ? filtered.slice(-10) : filtered);
                  }
                  const identicalArr = key ? (state.identical.get(key) || []) : [];
                  const identicalSpam = identicalArr.length >= ANTI_SPAM_IDENTICAL_LIMIT;
@@ -360,7 +400,25 @@ module.exports = {
                      strikeMap.set(userId, strikeEntry);
 
                      const penaltyHours = strikeEntry.strikes;
-                     await eloraAntiSpamEnforce(message, cfg, penaltyHours);
+                     let spamType = 'Unknown';
+                     let triggerCount = 0;
+                     let evidenceMessages = [];
+
+                     if (mentionSpam) {
+                         spamType = 'Mass Mentions';
+                         triggerCount = mentionCount;
+                         evidenceMessages = [String(message.content || '')];
+                     } else if (identicalSpam) {
+                         spamType = 'Identical Messages';
+                         triggerCount = identicalArr.length;
+                         evidenceMessages = identicalArr.map(m => String(m?.c || '')).filter(Boolean);
+                     } else if (rateSpam) {
+                         spamType = 'Rate Limit (Flood)';
+                         triggerCount = state.recentMsgs.length;
+                         evidenceMessages = state.recentMsgs.map(m => String(m?.c || '')).filter(Boolean);
+                     }
+
+                     await eloraAntiSpamEnforce(message, cfg, penaltyHours, { spamType, triggerCount, evidenceMessages });
                      return;
                  }
              }
