@@ -80,6 +80,10 @@ module.exports = {
             const executorId = audit?.executorId;
             if (!executorId) return;
 
+            // Strict bypass: ELORA HUB legitimate automation bot
+            // If HUB deletes channels (temp VC cleanup, ticket cleanup, etc.), ignore completely.
+            if (executorId === '1478021351984857119') return;
+
             // Critical bypass: if the bot itself deleted the channel (tickets/temp-VC cleanup/etc.),
             // do NOT restore or punish. This prevents "ghost channel" respawns.
             if (executorId === guild.client?.user?.id) return;
