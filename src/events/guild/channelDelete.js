@@ -80,6 +80,20 @@ module.exports = {
             const executorId = audit?.executorId;
             if (!executorId) return;
 
+            // Critical bypass: if the bot itself deleted the channel (tickets/temp-VC cleanup/etc.),
+            // do NOT restore or punish. This prevents "ghost channel" respawns.
+            if (executorId === guild.client?.user?.id) return;
+
+            // Conservative bypass heuristics (best-effort) for common Ticket/Temp-Voice channels.
+            // These are intentionally narrow to avoid weakening anti-nuke for regular channels.
+            const parentName = String(channel.parent?.name || '').toLowerCase();
+            const channelName = String(channel.name || '').toLowerCase();
+            if (parentName.includes('ticket') || channelName.includes('ticket')) return;
+            if (parentName.includes('support') || channelName.includes('support')) return;
+            if (parentName.includes('temp') || parentName.includes('private')) {
+                if (channel.type === 2) return; // GuildVoice
+            }
+
             const executorMember = await guild.members.fetch(executorId).catch(() => null);
             if (isWhitelistedMember(executorMember, config)) return;
 
