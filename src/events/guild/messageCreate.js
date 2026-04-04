@@ -12,7 +12,7 @@ const ANTI_SPAM_TIMEOUT_MS = 60 * 60 * 1000;
 const ANTI_SPAM_RATE_WINDOW_MS = 10 * 1000;
 const ANTI_SPAM_RATE_LIMIT = 10;
 const ANTI_SPAM_IDENTICAL_WINDOW_MS = 10 * 1000;
-const ANTI_SPAM_IDENTICAL_LIMIT = 3;
+const ANTI_SPAM_IDENTICAL_LIMIT = 10;
 const ANTI_SPAM_MENTION_LIMIT = 10;
 
 // Map<GuildId, Map<UserId, { recentMsgs: { t: number, c: string }[], identical: Map<string, { t: number, c: string }[]>, punishedUntil: number }>>
