@@ -2,7 +2,7 @@ const { PermissionFlagsBits } = require('discord.js');
 const ModSettings = require('../../models/ModSettings');
 
 const VERIFY_ROLE_ID = '1461769279195058342';
-const VERIFY_EMOJI_ID = '1479967165619634348';
+const VERIFY_EMOJI_ID = '1487391271759646750';
 
 function toSmallCaps(text) {
     const map = {

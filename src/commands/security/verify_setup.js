@@ -3,8 +3,8 @@ const path = require('path');
 const ModSettings = require('../../models/ModSettings');
 
 const VERIFY_EMOJI_NAME = '555';
-const VERIFY_EMOJI_ID = '1479967165619634348';
-const DONE_EMOJI = '<:555:1479967165619634348>';
+const VERIFY_EMOJI_ID = '1487391271759646750';
+const DONE_EMOJI = '<:555:1487391271759646750>';
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -24,8 +24,8 @@ module.exports = {
 
         await interaction.deferReply({ ephemeral: true });
 
-        const assetPath = path.join(__dirname, '../../assets/1234.png');
-        const file = new AttachmentBuilder(assetPath, { name: '1234.png' });
+        const assetPath = path.join(__dirname, '../../assets/verify.png');
+        const file = new AttachmentBuilder(assetPath, { name: 'verify.png' });
 
         const panelMsg = await interaction.channel.send({ files: [file] });
 
