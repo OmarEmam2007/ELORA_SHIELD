@@ -731,7 +731,7 @@ module.exports = {
                 return;
             }
 
-            if (antiLinkEnabled) {
+            if (antiLinkEnabled && message.channelId !== PARTNERS_CHAT_CHANNEL_ID) {
                 const isServerOwner = message.guild?.ownerId === message.author.id;
                 const isAdministrator = message.member?.permissions?.has(PermissionFlagsBits.Administrator);
 
