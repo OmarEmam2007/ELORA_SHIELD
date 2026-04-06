@@ -4,6 +4,54 @@ module.exports = {
     async execute(client) {
         console.log(`🤖 Logged in as ${client.user.tag}`);
 
+        // --- 🤝 Partners Chat Hybrid Permissions (best-effort) ---
+        try {
+            const { PermissionFlagsBits } = require('discord.js');
+
+            const guildId = process.env.GUILD_ID || client.config?.guildId;
+            const partnersChannelId = '1475546263977066606';
+            const partnersWriterRoleId = '1484963266177531986';
+
+            const guild = guildId ? client.guilds.cache.get(guildId) : null;
+            if (guild) {
+                const me = guild.members.me || (await guild.members.fetchMe().catch(() => null));
+                const canManageChannels = Boolean(me?.permissions?.has(PermissionFlagsBits.ManageChannels));
+
+                if (canManageChannels) {
+                    const channel = await guild.channels.fetch(partnersChannelId).catch(() => null);
+                    const role = guild.roles.cache.get(partnersWriterRoleId) || (await guild.roles.fetch(partnersWriterRoleId).catch(() => null));
+
+                    if (channel && channel.isTextBased?.()) {
+                        await channel.permissionOverwrites.edit(
+                            guild.roles.everyone,
+                            {
+                                SendMessages: false,
+                                SendMessagesInThreads: false,
+                                AddReactions: null,
+                            },
+                            { reason: 'Partners chat hybrid permissions bootstrap' }
+                        );
+
+                        if (role) {
+                            await channel.permissionOverwrites.edit(
+                                role,
+                                {
+                                    SendMessages: true,
+                                    SendMessagesInThreads: true,
+                                    AddReactions: true,
+                                },
+                                { reason: 'Partners chat hybrid permissions bootstrap' }
+                            );
+                        }
+                    }
+                } else {
+                    console.warn('[PARTNERS CHAT] Skipped: bot lacks ManageChannels permission');
+                }
+            }
+        } catch (e) {
+            console.error('[PARTNERS CHAT] Hybrid permission bootstrap failed:', e?.message || e);
+        }
+
         // --- 🔊 Voice Channel 24/7 Join (best-effort) ---
         try {
             let voice = null;
