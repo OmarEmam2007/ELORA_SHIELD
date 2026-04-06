@@ -52,7 +52,7 @@ function findRole(guild, roleQuery) {
 
 module.exports = {
     name: 'role',
-    aliases: ['addrole', 'giverole', 'r'],
+    aliases: ['addrole', 'giverole', 'rr'],
     async execute(message, client, args) {
         if (!message.member?.permissions?.has(PermissionFlagsBits.ManageRoles)) {
             return message.reply(`${ERROR_EMOJI} **ʏᴏᴜ ɴᴇᴇᴅ ᴍᴀɴᴀɢᴇ ʀᴏʟᴇꜱ ᴛᴏ ᴜꜱᴇ ᴛʜɪꜱ.**`);
@@ -60,7 +60,7 @@ module.exports = {
 
         const targetMember = message.mentions.members.first() || (args?.[0] ? await message.guild.members.fetch(String(args[0]).replace(/\D/g, '')).catch(() => null) : null);
         if (!targetMember) {
-            return message.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ʀ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
+            return message.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ʀʀ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
         }
 
         const hierarchy = canActOnTarget({ guild: message.guild, invokerMember: message.member, targetMember: targetMember });
@@ -70,7 +70,7 @@ module.exports = {
 
         const roleQuery = args.slice(1).join(' ').trim();
         if (!roleQuery) {
-            return message.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ʀ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
+            return message.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ʀʀ @ᴜꜱᴇʀ [ʀᴏʟᴇ]**`);
         }
 
         const role = findRole(message.guild, roleQuery);
