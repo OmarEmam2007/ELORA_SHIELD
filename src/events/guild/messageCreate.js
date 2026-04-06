@@ -354,6 +354,8 @@ module.exports = {
     async execute(message, client) {
         if (message.author.bot || !message.guild) return;
 
+        if (message.channelId === PARTNERS_CHAT_CHANNEL_ID) return;
+
          try {
              const cfg = await eloraGetGuildSecurityConfigCached(message.guild.id);
              const antiSpamEnabled = cfg?.antiSpamEnabled !== false;
