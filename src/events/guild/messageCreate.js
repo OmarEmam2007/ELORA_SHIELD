@@ -11,6 +11,8 @@ const { handlePrefixCommand } = require('../../handlers/prefixCommandHandler');
  const PARTNERS_CHAT_CHANNEL_ID = '1475546263977066606';
  const PARTNERS_CHAT_WRITER_ROLE_ID = '1484963266177531986';
 
+ const ANTISWEAR_DEBUG = String(process.env.ANTISWEAR_DEBUG || '').toLowerCase() === 'true';
+
 const ANTI_SPAM_TIMEOUT_MS = 60 * 60 * 1000;
 const ANTI_SPAM_RATE_WINDOW_MS = 10 * 1000;
 const ANTI_SPAM_RATE_LIMIT = 10;
