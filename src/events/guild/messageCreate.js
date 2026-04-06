@@ -8,6 +8,9 @@ const THEME = require('../../utils/theme');
 const { getGuildLogChannel } = require('../../utils/getGuildLogChannel');
 const { handlePrefixCommand } = require('../../handlers/prefixCommandHandler');
 
+ const PARTNERS_CHAT_CHANNEL_ID = '1475546263977066606';
+ const PARTNERS_CHAT_WRITER_ROLE_ID = '1484963266177531986';
+
 const ANTI_SPAM_TIMEOUT_MS = 60 * 60 * 1000;
 const ANTI_SPAM_RATE_WINDOW_MS = 10 * 1000;
 const ANTI_SPAM_RATE_LIMIT = 10;
@@ -131,6 +134,12 @@ async function eloraResolveTargetMember(message, parts, idTokenIndex) {
      const perms = member.permissions;
      const isAdmin = Boolean(perms?.has?.(PermissionFlagsBits.Administrator));
      if (isAdmin) return true;
+
+     // Partners chat hybrid: treat writers as staff-exempt inside that channel
+     if (message.channelId === PARTNERS_CHAT_CHANNEL_ID) {
+         const hasWriterRole = Boolean(member.roles?.cache?.has?.(PARTNERS_CHAT_WRITER_ROLE_ID));
+         if (hasWriterRole) return true;
+     }
 
      const wlUsers = Array.isArray(cfg?.whitelistUsers) ? cfg.whitelistUsers : [];
      if (wlUsers.includes(message.author.id)) return true;
@@ -727,8 +736,10 @@ module.exports = {
                 const modSettings = await ModSettings.findOne({ guildId: message.guild.id }).catch(() => null);
                 const whitelistRoles = Array.isArray(modSettings?.whitelistRoles) ? modSettings.whitelistRoles : [];
                 const whitelistChannels = Array.isArray(modSettings?.whitelistChannels) ? modSettings.whitelistChannels : [];
+                const hasPartnersWriterRole = Boolean(message.member?.roles?.cache?.has?.(PARTNERS_CHAT_WRITER_ROLE_ID));
                 const isWhitelisted = Boolean(
-                    message.channelId === '1475546263977066606' ||
+                    message.channelId === PARTNERS_CHAT_CHANNEL_ID ||
+                    hasPartnersWriterRole ||
                     (message.channelId && whitelistChannels.includes(message.channelId)) ||
                     (message.member?.roles?.cache && whitelistRoles.some(r => message.member.roles.cache.has(r)))
                 );
@@ -789,7 +800,9 @@ module.exports = {
 
             const whitelistRoles = Array.isArray(modSettings?.whitelistRoles) ? modSettings.whitelistRoles : [];
             const whitelistChannels = Array.isArray(modSettings?.whitelistChannels) ? modSettings.whitelistChannels : [];
+            const hasPartnersWriterRole = Boolean(message.member?.roles?.cache?.has?.(PARTNERS_CHAT_WRITER_ROLE_ID));
             const isWhitelisted = Boolean(
+                (message.channelId === PARTNERS_CHAT_CHANNEL_ID && hasPartnersWriterRole) ||
                 (message.channelId && whitelistChannels.includes(message.channelId)) ||
                 (message.member?.roles?.cache && whitelistRoles.some(r => message.member.roles.cache.has(r)))
             );
