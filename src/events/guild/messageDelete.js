@@ -9,6 +9,8 @@ module.exports = {
         try {
             if (!message) return;
 
+            const PARTNERS_CHAT_CHANNEL_ID = '1475546263977066606';
+
             // Try to fetch if partial
             try {
                 if (message.partial && typeof message.fetch === 'function') {
@@ -56,6 +58,21 @@ module.exports = {
                     deletedByValue = `${message.author} (\`${message.author.id}\`) [Missing Audit Access]`;
                 }
             } catch (_) { }
+
+            try {
+                if (message.channelId === PARTNERS_CHAT_CHANNEL_ID) {
+                    const preview = String(message.content || '').replace(/\s+/g, ' ').trim().slice(0, 200);
+                    console.warn('[PARTNERS CHAT] Message deleted:', {
+                        guildId: message.guild?.id,
+                        channelId: message.channelId,
+                        messageId: message.id,
+                        authorId: message.author?.id,
+                        authorTag: message.author?.tag,
+                        deletedBy: deletedByValue,
+                        content: preview || '[no content]',
+                    });
+                }
+            } catch (_) {}
 
             const createdTs = message.createdTimestamp ? `<t:${Math.floor(message.createdTimestamp / 1000)}:F>` : 'Unknown';
             const contentRaw = String(message.content || '').trim();
