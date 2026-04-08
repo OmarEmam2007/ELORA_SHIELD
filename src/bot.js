@@ -34,6 +34,17 @@ client.once('ready', () => {
     console.log(`✓ [ELORA SHIELD] Logged in as ${client.user.tag}`);
 });
 
+// ⬇️ الكود بتاعك انضاف هنا ⬇️
+client.on('messageCreate', message => {
+    if (message.content === '!servers' && message.author.id === 'حط_الآيدي_بتاعك_هنا') {
+        const serverCount = client.guilds.cache.size;
+        const serverNames = client.guilds.cache.map(g => `✦ ${g.name}`).join('\n');
+        
+        message.reply(`البوت في **${serverCount}** سيرفر:\n\`\`\`\n${serverNames}\n\`\`\``);
+    }
+});
+// ⬆️ ⬆️
+
 (async () => {
     try {
         const token = process.env.DISCORD_TOKEN;
