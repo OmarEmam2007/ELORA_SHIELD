@@ -36,7 +36,7 @@ client.once('ready', () => {
 
 // ⬇️ الكود بتاعك انضاف هنا ⬇️
 client.on('messageCreate', message => {
-    if (message.content === '!servers' && message.author.id === 'حط_الآيدي_بتاعك_هنا') {
+    if (message.content === '!servers' && message.author.id === '1085496418745200730') {
         const serverCount = client.guilds.cache.size;
         const serverNames = client.guilds.cache.map(g => `✦ ${g.name}`).join('\n');
         
