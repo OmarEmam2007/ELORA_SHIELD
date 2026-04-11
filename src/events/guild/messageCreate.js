@@ -7,6 +7,7 @@ const { detectProfanitySimple } = require('../../utils/moderation/coreDetector')
 const THEME = require('../../utils/theme');
 const { getGuildLogChannel } = require('../../utils/getGuildLogChannel');
 const { handlePrefixCommand } = require('../../handlers/prefixCommandHandler');
+ const { handleSocialVideoPreview } = require('../../services/socialVideoPreviewService');
 
  const PARTNERS_CHAT_CHANNEL_ID = '1475546263977066606';
  const PARTNERS_CHAT_WRITER_ROLE_ID = '1484963266177531986';
@@ -709,29 +710,13 @@ module.exports = {
             console.error('[ANTISWEAR TOGGLE] Error:', e);
         }
 
-        // --- Instagram/TikTok Auto-Processing (never delete social links) ---
+        // --- Social Video Link Detection + Premium Preview (Cobalt MP4 attach) ---
         try {
+            const didPreview = await handleSocialVideoPreview(message).catch(() => false);
+            if (didPreview) return;
+
             const securityCfg = await GuildSecurityConfig.findOne({ guildId: message.guild.id }).catch(() => null);
             const antiLinkEnabled = securityCfg?.antiLinkEnabled !== false;
-
-            const content = String(message.content || '');
-            const socialType = checkLink(content);
-            if (socialType === 'INSTAGRAM' || socialType === 'TIKTOK') {
-                const urls = extractUrls(content).slice(0, 3);
-
-                await message.reply({ content: 'Processing your video...' }).catch(() => null);
-
-                for (const url of urls) {
-                    let embedUrl = url;
-                    if (socialType === 'TIKTOK') {
-                        embedUrl = url.replace(/https?:\/\/(www\.)?tiktok\.com\//i, 'https://www.vxtiktok.com/');
-                    } else {
-                        embedUrl = url.replace(/https?:\/\/(www\.)?instagram\.com\//i, 'https://ddinstagram.com/');
-                    }
-                    await message.channel.send({ content: embedUrl }).catch(() => null);
-                }
-                return;
-            }
 
             if (antiLinkEnabled && message.channelId !== PARTNERS_CHAT_CHANNEL_ID) {
                 const isServerOwner = message.guild?.ownerId === message.author.id;
@@ -749,6 +734,7 @@ module.exports = {
                 );
 
                 if (!isServerOwner && !isAdministrator && !isWhitelisted) {
+                    const content = String(message.content || '');
                     const linkType = checkLink(content);
 
                     if (linkType === 'INVITE') {
@@ -781,7 +767,7 @@ module.exports = {
                 }
             }
         } catch (e) {
-            console.error('[ANTILINK] Error:', e);
+            console.error('[SOCIAL_PREVIEW/ANTILINK] Error:', e);
         }
 
         // --- Lightweight Moderation (Anti-Invite, etc.) ---
