@@ -55,8 +55,11 @@ module.exports = {
                 if (!role) return safeReply({ content: '**✖ Role not found.**', ephemeral: true });
                 if (interaction.member.roles.cache.has(roleId)) return safeReply({ content: '**▫️ Already verified.**', ephemeral: true });
                 try {
+                    if (!interaction.deferred && !interaction.replied) {
+                        await interaction.deferReply({ ephemeral: true }).catch(() => null);
+                    }
                     await interaction.member.roles.add(role);
-                    return safeReply({ content: '**✦ Verified. Access granted.**', ephemeral: true });
+                    return safeEdit({ content: '**✦ Verified. Access granted.**' });
                 } catch (error) {
                     return safeReply({ content: '**✖ Hierarchy error.**', ephemeral: true });
                 }
@@ -69,8 +72,11 @@ module.exports = {
                 if (!role) return safeReply({ content: '**✖ Role not found.**', ephemeral: true });
                 if (interaction.member.roles.cache.has(roleId)) return safeReply({ content: '**▫️ Already verified.**', ephemeral: true });
                 try {
+                    if (!interaction.deferred && !interaction.replied) {
+                        await interaction.deferReply({ ephemeral: true }).catch(() => null);
+                    }
                     await interaction.member.roles.add(role);
-                    return safeReply({ content: '**✦ Verified. Access granted.**', ephemeral: true });
+                    return safeEdit({ content: '**✦ Verified. Access granted.**' });
                 } catch (error) {
                     return safeReply({ content: '**✖ Hierarchy error.**', ephemeral: true });
                 }

@@ -1,15 +1,13 @@
-const { SlashCommandBuilder, PermissionFlagsBits, AttachmentBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, AttachmentBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const path = require('path');
 const ModSettings = require('../../models/ModSettings');
 
-const VERIFY_EMOJI_NAME = '555';
-const VERIFY_EMOJI_ID = '1487391271759646750';
-const DONE_EMOJI = '<:555:1487391271759646750>';
+const VERIFY_ROLE_ID = '1461769279195058342';
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('verify_setup')
-        .setDescription('Post the verification panel and configure reaction verification.')
+        .setDescription('Post the verification panel (button verification).')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
     async execute(interaction) {
@@ -27,10 +25,14 @@ module.exports = {
         const assetPath = path.join(__dirname, '../../assets/verify.png');
         const file = new AttachmentBuilder(assetPath, { name: 'verify.png' });
 
-        const panelMsg = await interaction.channel.send({ files: [file] });
+        const row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId(`verify_${VERIFY_ROLE_ID}`)
+                .setLabel('Verify')
+                .setStyle(ButtonStyle.Success)
+        );
 
-        const emoji = `<:${VERIFY_EMOJI_NAME}:${VERIFY_EMOJI_ID}>`;
-        await panelMsg.react(emoji).catch(() => null);
+        const panelMsg = await interaction.channel.send({ files: [file], components: [row] });
 
         await ModSettings.findOneAndUpdate(
             { guildId: interaction.guildId },
