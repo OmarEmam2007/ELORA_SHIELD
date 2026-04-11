@@ -62,6 +62,20 @@ module.exports = {
                 }
             }
 
+            // --- Verification Button (Dynamic Role) ---
+            if (interaction.customId && interaction.customId.startsWith('verify_')) {
+                const roleId = interaction.customId.slice('verify_'.length);
+                const role = interaction.guild.roles.cache.get(roleId);
+                if (!role) return safeReply({ content: '**✖ Role not found.**', ephemeral: true });
+                if (interaction.member.roles.cache.has(roleId)) return safeReply({ content: '**▫️ Already verified.**', ephemeral: true });
+                try {
+                    await interaction.member.roles.add(role);
+                    return safeReply({ content: '**✦ Verified. Access granted.**', ephemeral: true });
+                } catch (error) {
+                    return safeReply({ content: '**✖ Hierarchy error.**', ephemeral: true });
+                }
+            }
+
             // --- 🛡️ SMART MODERATION BUTTONS ---
             if (interaction.customId.startsWith('mod_') || interaction.customId.startsWith('dash_')) {
                 if (!interaction.member.permissions.has(PermissionFlagsBits.ManageMessages)) return safeReply({ content: '**✖ No permission.**', ephemeral: true });

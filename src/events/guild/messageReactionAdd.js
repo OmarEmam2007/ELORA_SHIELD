@@ -50,7 +50,6 @@ module.exports = {
             if (member.roles.cache.has(VERIFY_ROLE_ID)) return;
 
             await member.roles.add(VERIFY_ROLE_ID, 'Verification reaction').catch(() => null);
-            await user.send(toSmallCaps('YOU ARE NOW VERIFIED')).catch(() => null);
         } catch (e) {
             console.error('[VERIFY] messageReactionAdd error:', e);
         }
