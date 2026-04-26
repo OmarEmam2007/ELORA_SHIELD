@@ -22,8 +22,8 @@ module.exports = {
 
         await interaction.deferReply({ ephemeral: true });
 
-        const assetPath = path.join(__dirname, '../../assets/verify.png');
-        const file = new AttachmentBuilder(assetPath, { name: 'verify.png' });
+        const assetPath = path.join(__dirname, '../../../assets/new banner1.png');
+        const file = new AttachmentBuilder(assetPath, { name: 'new_banner1.png' });
 
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder()

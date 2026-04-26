@@ -3,6 +3,8 @@ const { AttachmentBuilder, EmbedBuilder } = require('discord.js');
 const THEME = require('./theme');
 
 const ASSETS_DIR = path.join(__dirname, '..', '..', 'assets');
+const BANNER_FILE_NAME = 'new banner1.png';
+const BANNER_ATTACHMENT_NAME = 'new_banner1.png';
 
 const ASSET_FILES = {
     wrong: '9596-wrong.gif',
@@ -21,14 +23,11 @@ const ASSET_FILES = {
 };
 
 function buildAssetAttachment(key) {
-    const fileName = ASSET_FILES[key];
-    if (!fileName) return null;
+    void key;
 
-    const filePath = path.join(ASSETS_DIR, fileName);
-    const name = fileName;
-
-    const attachment = new AttachmentBuilder(filePath, { name });
-    return { attachment, url: `attachment://${name}` };
+    const filePath = path.join(ASSETS_DIR, BANNER_FILE_NAME);
+    const attachment = new AttachmentBuilder(filePath, { name: BANNER_ATTACHMENT_NAME });
+    return { attachment, url: `attachment://${BANNER_ATTACHMENT_NAME}` };
 }
 
 function makeStatusEmbed({

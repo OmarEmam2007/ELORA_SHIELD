@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
+const path = require('path');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -13,7 +14,7 @@ module.exports = {
         }
 
         // Load the local image
-        const file = new AttachmentBuilder('./assets/moon.jpg');
+        const file = new AttachmentBuilder(path.join(__dirname, '../../../assets/new banner1.png'), { name: 'new_banner1.png' });
 
         const embed = new EmbedBuilder()
             .setTitle('🌑 ELORA')
@@ -22,7 +23,7 @@ module.exports = {
                 `**Welcome to the Estate.**\n\n` +
                 `To access the server and receive the **༄.° ᴀsᴛʀᴀʏ** role, please verify your identity by clicking the button below.`
             )
-            .setImage('attachment://moon.jpg')
+            .setImage('attachment://new_banner1.png')
             .setColor(client.config.colors.primary)
             .setTimestamp();
 
