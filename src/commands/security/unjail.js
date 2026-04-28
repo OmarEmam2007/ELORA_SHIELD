@@ -1,55 +1,44 @@
-const User = require('../../models/User');
- 
+const { PermissionFlagsBits } = require('discord.js');
+
 const DONE_EMOJI = '<:555:1479967165619634348>';
 const ERROR_EMOJI = '<:661071whitex:1479988133704761515>';
 const { canActOnTarget } = require('../../utils/moderationHierarchy');
-
-const MODERATOR_ROLE = '1467467348595314740';
-const ADMIN_ROLE = '1467466915902394461';
-const JAILED_ROLE = '1467467538551279769';
-const CASINO_LOGS_ID = '1467466000214655150';
+const { unjailMember } = require('../../services/jailService');
 
 module.exports = {
     name: 'unjail',
     async execute(message, client, args) {
         if (!message.guild) return;
 
-        if (!message.member.roles.cache.has(MODERATOR_ROLE) && !message.member.roles.cache.has(ADMIN_ROLE)) {
-            return message.reply(`${ERROR_EMOJI} **ʏᴏᴜ ᴅᴏ ɴᴏᴛ ʜᴀᴠᴇ ᴘᴇʀᴍɪꜱꜱɪᴏɴ.**`);
+        if (!message.member?.permissions?.has(PermissionFlagsBits.ManageRoles)) {
+            return message.reply(`${ERROR_EMOJI} **You need the Manage Roles permission to use this command.**`);
         }
 
-        const targetUser = message.mentions.users.first() || (args?.[0] ? await client.users.fetch(String(args[0]).replace(/\D/g, '')).catch(() => null) : null);
-        if (!targetUser) {
-            return message.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴜɴᴊᴀɪʟ @ᴜꜱᴇʀ**`);
-        }
-
-        const targetMember = await message.guild.members.fetch(targetUser.id).catch(() => null);
+        const targetMember = message.mentions.members.first() || (args?.[0] ? await message.guild.members.fetch(String(args[0]).replace(/\D/g, '')).catch(() => null) : null);
         if (!targetMember) {
-            return message.reply(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ ɪɴ ᴛʜɪꜱ ꜱᴇʀᴠᴇʀ.**`);
+            return message.reply(`${ERROR_EMOJI} **Usage: .unjail @user**`);
         }
 
-        const hierarchy = canActOnTarget({ guild: message.guild, invokerMember: message.member, targetMember: targetMember });
+        const hierarchy = canActOnTarget({ guild: message.guild, invokerMember: message.member, targetMember });
         if (!hierarchy.ok) {
-            return message.reply(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ᴜɴᴊᴀɪʟ ᴛʜɪꜱ ᴜꜱᴇʀ.**`);
+            return message.reply(`${ERROR_EMOJI} **You cannot unjail this user due to role hierarchy.**`);
         }
 
-        const jailedRole = message.guild.roles.cache.get(JAILED_ROLE);
-        if (jailedRole && targetMember.roles.cache.has(JAILED_ROLE)) {
-            await targetMember.roles.remove(jailedRole).catch(() => { });
-        }
+        try {
+            const res = await unjailMember({
+                guild: message.guild,
+                invokerTag: message.author.tag,
+                targetMember,
+                markInactive: true,
+            });
 
-        let userProfile = await User.findOne({ userId: targetUser.id, guildId: message.guild.id });
-        if (userProfile) {
-            userProfile.jailed = false;
-            userProfile.jailReleaseTime = null;
-            await userProfile.save();
-        }
+            if (!res.ok) {
+                return message.reply(`${ERROR_EMOJI} **${res.error}**`);
+            }
 
-        await message.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ, ${targetUser} ʜᴀꜱ ʙᴇᴇɴ ᴜɴᴊᴀɪʟᴇᴅ.**`);
-
-        const logChannel = message.guild.channels.cache.get(CASINO_LOGS_ID);
-        if (logChannel) {
-            await logChannel.send(`${DONE_EMOJI} **ᴜɴᴊᴀɪʟ | ${message.author.tag} -> ${targetUser.tag}**`).catch(() => { });
+            return message.reply(`${DONE_EMOJI} **${targetMember.user.tag} has been unjailed and their roles have been restored (best-effort).**`);
+        } catch (e) {
+            return message.reply(`${ERROR_EMOJI} **An error occurred while unjailing this user.**`);
         }
     }
 };

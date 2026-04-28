@@ -1,63 +1,55 @@
-const User = require('../../models/User');
- 
+const { PermissionFlagsBits } = require('discord.js');
+
 const DONE_EMOJI = '<:555:1479967165619634348>';
 const ERROR_EMOJI = '<:661071whitex:1479988133704761515>';
 const { canActOnTarget } = require('../../utils/moderationHierarchy');
-
-const MODERATOR_ROLE = '1467467348595314740';
-const ADMIN_ROLE = '1467466915902394461';
-const JAILED_ROLE = process.env.JAILED_ROLE_ID || '1467467538551279769';
-const CASINO_LOGS_ID = '1467466000214655150';
+const { parseDurationToMs, jailMember } = require('../../services/jailService');
 
 module.exports = {
     name: 'jail',
     async execute(message, client, args) {
         if (!message.guild) return;
 
-        if (!message.member.roles.cache.has(MODERATOR_ROLE) && !message.member.roles.cache.has(ADMIN_ROLE)) {
-            return message.reply(`${ERROR_EMOJI} **ʏᴏᴜ ᴅᴏ ɴᴏᴛ ʜᴀᴠᴇ ᴘᴇʀᴍɪꜱꜱɪᴏɴ.**`);
+        if (!message.member?.permissions?.has(PermissionFlagsBits.ManageRoles)) {
+            return message.reply(`${ERROR_EMOJI} **You need the Manage Roles permission to use this command.**`);
         }
 
-        const targetUser = message.mentions.users.first() || (args?.[0] ? await client.users.fetch(String(args[0]).replace(/\D/g, '')).catch(() => null) : null);
-        const duration = parseInt(args[1]);
-
-        if (!targetUser) {
-            return message.reply(`${ERROR_EMOJI} **ᴜꜱᴀɢᴇ: .ᴊᴀɪʟ @ᴜꜱᴇʀ [ʜᴏᴜʀꜱ]**`);
-        }
-
-        if (!duration || isNaN(duration) || duration <= 0) {
-            return message.reply(`${ERROR_EMOJI} **ᴘʟᴇᴀꜱᴇ ꜱᴘᴇᴄɪꜰʏ ᴀ ᴠᴀʟɪᴅ ᴅᴜʀᴀᴛɪᴏɴ ɪɴ ʜᴏᴜʀꜱ.**`);
-        }
-
-        const targetMember = await message.guild.members.fetch(targetUser.id).catch(() => null);
+        const targetMember = message.mentions.members.first() || (args?.[0] ? await message.guild.members.fetch(String(args[0]).replace(/\D/g, '')).catch(() => null) : null);
         if (!targetMember) {
-            return message.reply(`${ERROR_EMOJI} **ᴜꜱᴇʀ ɴᴏᴛ ꜰᴏᴜɴᴅ ɪɴ ᴛʜɪꜱ ꜱᴇʀᴠᴇʀ.**`);
+            return message.reply(`${ERROR_EMOJI} **Usage: .jail @user <duration>**`);
         }
 
-        const hierarchy = canActOnTarget({ guild: message.guild, invokerMember: message.member, targetMember: targetMember });
+        const hierarchy = canActOnTarget({ guild: message.guild, invokerMember: message.member, targetMember });
         if (!hierarchy.ok) {
-            return message.reply(`${ERROR_EMOJI} **ɪ ᴄᴀɴ'ᴛ ᴊᴀɪʟ ᴛʜɪꜱ ᴜꜱᴇʀ.**`);
+            return message.reply(`${ERROR_EMOJI} **You cannot jail this user due to role hierarchy.**`);
         }
 
-        const jailedRole = message.guild.roles.cache.get(JAILED_ROLE);
-        if (jailedRole) {
-            await targetMember.roles.add(jailedRole).catch(() => { });
+        const durationToken = args?.[1] ? String(args[1]).trim() : '';
+        const durationMs = durationToken ? parseDurationToMs(durationToken) : null;
+        if (durationToken && !durationMs) {
+            return message.reply(`${ERROR_EMOJI} **Invalid duration. Examples: 30m, 2h, 1d, 1w.**`);
         }
 
-        let userProfile = await User.findOne({ userId: targetUser.id, guildId: message.guild.id });
-        if (!userProfile) {
-            userProfile = new User({ userId: targetUser.id, guildId: message.guild.id });
-        }
+        try {
+            const res = await jailMember({
+                guild: message.guild,
+                invokerTag: message.author.tag,
+                targetMember,
+                durationMs,
+            });
 
-        userProfile.jailed = true;
-        userProfile.jailReleaseTime = new Date(Date.now() + duration * 60 * 60 * 1000);
-        await userProfile.save();
+            if (!res.ok) {
+                return message.reply(`${ERROR_EMOJI} **${res.error}**`);
+            }
 
-        await message.reply(`${DONE_EMOJI} **ᴅᴏɴᴇ, ${targetUser} ʜᴀꜱ ʙᴇᴇɴ ᴊᴀɪʟᴇᴅ.**`);
+            if (res.record?.releaseAt) {
+                const ts = Math.floor(new Date(res.record.releaseAt).getTime() / 1000);
+                return message.reply(`${DONE_EMOJI} **${targetMember.user.tag} has been jailed until <t:${ts}:F>.**`);
+            }
 
-        const logChannel = message.guild.channels.cache.get(CASINO_LOGS_ID);
-        if (logChannel) {
-            await logChannel.send(`${DONE_EMOJI} **ᴊᴀɪʟ | ${message.author.tag} -> ${targetUser.tag} | ${duration}h**`).catch(() => { });
+            return message.reply(`${DONE_EMOJI} **${targetMember.user.tag} has been jailed permanently (until manually unjailed).**`);
+        } catch (e) {
+            return message.reply(`${ERROR_EMOJI} **An error occurred while jailing this user.**`);
         }
     }
 };

@@ -4,6 +4,19 @@ module.exports = {
     async execute(client) {
         console.log(`🤖 Logged in as ${client.user.tag}`);
 
+        // --- 🚓 Jail Scheduler (restart-safe) ---
+        try {
+            const { runJailSchedulerTick } = require('../../services/jailService');
+            runJailSchedulerTick(client).catch(() => { });
+            if (!client._jailSchedulerInterval) {
+                client._jailSchedulerInterval = setInterval(() => {
+                    runJailSchedulerTick(client).catch(() => { });
+                }, 60 * 1000);
+            }
+        } catch (_) {
+            // ignore
+        }
+
         // --- 🤝 Partners Chat Hybrid Permissions (best-effort) ---
         try {
             const { PermissionFlagsBits } = require('discord.js');
