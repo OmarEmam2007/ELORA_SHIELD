@@ -34,16 +34,35 @@ client.once('ready', () => {
     console.log(`✓ [ELORA SHIELD] Logged in as ${client.user.tag}`);
 });
 
-// ⬇️ الكود بتاعك انضاف هنا ⬇️
-client.on('messageCreate', message => {
+client.on('messageCreate', async message => {
+    // أمر عرض السيرفرات + الـ IDs
     if (message.content === '!servers' && message.author.id === '1085496418745200730') {
         const serverCount = client.guilds.cache.size;
-        const serverNames = client.guilds.cache.map(g => `✦ ${g.name}`).join('\n');
+        const serverList = client.guilds.cache.map(g => 
+            `✦ ${g.name}\n🆔 \`${g.id}\``
+        ).join('\n\n');
         
-        message.reply(`البوت في **${serverCount}** سيرفر:\n\`\`\`\n${serverNames}\n\`\`\``);
+        message.reply(`البوت في **${serverCount}** سيرفر:\n\`\`\`\n${serverList}\n\`\`\``);
+    }
+
+    // أمر خروج البوت من سيرفر معين
+    if (message.content.startsWith('!leave ') && message.author.id === '1085496418745200730') {
+        const guildId = message.content.split(' ')[1];
+        const guild = client.guilds.cache.get(guildId);
+
+        if (!guild) {
+            return message.reply('❌ مش لاقي السيرفر ده، تأكد من الـ ID.');
+        }
+
+        try {
+            await guild.leave();
+            message.reply(`✅ خرجت من السيرفر: **${guild.name}**`);
+        } catch (err) {
+            message.reply('❌ حصل خطأ وأنا بحاول أخرج من السيرفر.');
+            console.error(err);
+        }
     }
 });
-// ⬆️ ⬆️
 
 (async () => {
     try {
